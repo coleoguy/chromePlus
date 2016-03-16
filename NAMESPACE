@@ -1,0 +1,9 @@
+export(constrainMuSSE)
+export(constrainMkn)
+export(datatoMatrix)
+export(simChrom)
+export(startVals)
+
+importFrom(geiger, sim.char)
+importFrom(diversitree, find.me, make.mkn, constrain)
+

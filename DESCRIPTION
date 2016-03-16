@@ -1,0 +1,13 @@
+Package: chromevolR
+Type: Package
+Title: Analysis of chromosome number evolution
+Version: 0.0.0
+Date: 2016-03-16
+Author: Heath Blackmon, Emma Goldberg
+Maintainer: Heath Blackmon <coleoguy@gmail.com>
+Description: Implements models of chromosome evolution similar to chromevol using mkn and MuSSE models in diversitree.
+License: GPL (>= 2)
+URL: https://github.com/coleoguy/chromevolR
+Imports: diversitree, geiger
+Suggests: knitr
+VignetteBuilder: knitr
