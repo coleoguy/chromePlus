@@ -5,5 +5,5 @@ export(simChrom)
 export(startVals)
 
 importFrom(geiger, sim.char)
-importFrom(diversitree, find.me, make.mkn, constrain)
+importFrom(diversitree, find.mle, make.mkn, constrain)
 
