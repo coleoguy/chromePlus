@@ -8,7 +8,7 @@ Constrain a diversitree MuSSE model
 Returns a likelihood function that has been constrained to match an MuSSE model of chromosome evolution yielding essentially the original chromevol model.
 }
 \usage{
-constrainMkn(x)
+constrainMuSSE(x)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
