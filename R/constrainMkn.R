@@ -93,10 +93,10 @@ constrainMkn <- function(data, lik, model="single"){
         restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
       }
       if(parMat[i, j] == 1){
-        asc <- c(ascdip, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc", sep="" ))
+        asc <- c(asc, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc", sep="" ))
       }
       if(parMat[i, j] == 2){
-        desc <- c(descdip, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc", sep="" ))
+        desc <- c(desc, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc", sep="" ))
       }
       if(parMat[i, j] == 5){
         polypl <- c(polypl, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ polypl", sep="" ))
