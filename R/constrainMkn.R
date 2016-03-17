@@ -11,15 +11,26 @@
 # rate2 descending aneuploidy - diploid     descdip
 # rate5 polyploidization                    polypl
 #
-constrainMkn <- function(data, lik){
+constrainMkn <- function(data, lik, model="single"){
+  
+  ### setup
+  
   #diversitree needs states 1->n but we need to keep track
   #of actual numbers so that is the first step
-  chrom.numbs <- colnames(data)
+  if(model=="single"){
+    chrom.numbs <- colnames(data)
+  }
+  if(model=="hyper"){
+    split <- ncol(data)/2
+    chrom.numbs <- c(colnames(data)[1:split], colnames(data)[1:split])
+  }
   # create and store variable for padding rate names
+  
   if(ncol(data) < 100) pad <- 2
   if(ncol(data) >= 100) pad <- 3
   if(ncol(data) < 10) pad <- 1
-  # make the matrix of rates
+  
+  # make a matrix of rates
   parMat <- matrix(0,ncol(data),ncol(data))
   # make the components of the rate names the column and row
   # names this will allow for easy creation of constraints later
@@ -28,7 +39,7 @@ constrainMkn <- function(data, lik){
   # now we have a matrix with all zeros but the right state names
   # in the column and row names
   ### Now we use our chrom.numbs to lookup values and fill in the matrix
-  
+  if(model=="single"){
     for(i in 1:(nrow(parMat) - 1)){
       if((as.numeric(chrom.numbs)[i] * 2) <= max(as.numeric(chrom.numbs))){
         parMat[i, i+as.numeric(chrom.numbs[i])] <- 5 #polyploidy
@@ -36,10 +47,42 @@ constrainMkn <- function(data, lik){
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy
       parMat[(i + 1), i] <- 2 #descending aneuploidy
     }
-  # special case for 1->2
-  if(as.numeric(chrom.numbs[1]) == 1) parMat[1,2] <- 9
+    # special case for 1->2
+    if(as.numeric(chrom.numbs[1]) == 1) parMat[1,2] <- 9
+  }
+  
+  if(model=="hyper"){
+    for(i in 1:(nrow(parMat) - 1)){
+      if(i < split){
+        if((as.numeric(chrom.numbs)[i] * 2) <= max(as.numeric(chrom.numbs))){
+          parMat[i, i+as.numeric(chrom.numbs[i])] <- 5 #polyploidy
+        } 
+        parMat[i, (i + 1)] <- 1 #ascending aneuploidy
+        parMat[(i + 1), i] <- 2 #descending aneuploidy
+      }
+      if(i >= split){
+        if((as.numeric(chrom.numbs)[i] * 2) <= max(as.numeric(chrom.numbs))){
+          parMat[i, i+as.numeric(chrom.numbs[i])] <- 5 #polyploidy
+        } 
+        parMat[i, (i + 1)] <- 1 #ascending aneuploidy
+        parMat[(i + 1), i] <- 2 #descending aneuploidy
+      }
+      # special case for 1->2
+      if(as.numeric(chrom.numbs[1]) == 1){
+        parMat[1,2] <- 9
+        parmat[(1+split),(2+split)] <- 9
+      }
+    }
+  }
+  if(model=="ploidy"){
+    stop("Ploidy model not finished for mkn function")
+  }
+  
+  
   # each of these vectors will hold the formulae for that class of
   # parameters (described up at the top)
+  
+  # create arguments for constrain
   restricted <- ascdip <- descdip <- polypl <- spec <- vector()
   for(i in 1:nrow(parMat)){ # by rows then
     for(j in 1:ncol(parMat)){ # by cols

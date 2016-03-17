@@ -31,21 +31,42 @@ hist(data, breaks=range(data)[2]-range(data)[1])
 ### Loading data
 ###
 data("tree")
-
+data("chrom")
 ###
 ###
 ###
-d.data <- cbind(names(data), data)
-d.data <- datatoMatrix(x=d.data, excess=.25, hidden=F)
-d.data <- d.data[, 5:18]
 
-# Now we make the full likelihood functions
-lik <- make.mkn(tree, states=d.data,k=14,strict=F)
+# convert chromosome number to format for diversitree
+d.data <- cbind(names(chrom), chrom)
+p.mat <- datatoMatrix(x=d.data, range=c(8,17), hyper=F)
 
-# Constrain to chromevol
-lik.con <- constrainMkn(d.data, lik)
+# convert chromosome number to format for diversitree with hyperstate
+d.data <- cbind(names(chrom), chrom)
+hp.mat <- datatoMatrix(x=d.data, range=c(8,17), hyper=T)
+
+# Now we make the full mkn likelihood function (w/o hyper state)
+lik <- make.mkn(tree, states=p.mat, k=10, strict=F)
+
+# Now we make the full mkn likelihood function (w hyper state)
+h.lik <- make.mkn(tree, states=hp.mat, k=20, strict=F)
+#######
+#######
+####### This illustrates the outstanding problem of 
+####### how we deal with all unknowns in the mkn framework
+#######
+#######
+
+# For our purposes we can manually fix one
+hp.mat[1, 6]<-0
+h.lik <- make.mkn(tree, states=hp.mat, k=20, strict=F)
+
+# Constrain to chromevol (w/o hyperstate)
+lik.con <- constrainMkn(p.mat, lik)
+
+# Constrain to chromevol (w hyperstate)
+h.lik.con <- constrainMkn(hp.mat, h.lik)
 
 # find MLE
-foo <- find.mle(lik.con,x.init=runif(min = 0, max = 3, 3))
+foo <- find.mle(lik.con, x.init = startVals(3, 0, 1))
 
   
