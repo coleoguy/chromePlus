@@ -5,18 +5,16 @@
 # arguments 
 # data: this is the data matrix in the format for
 # for make.mkn in diversitree
-# polyploidy is present
 #
 # rates that are implemented include
 # rate1 ascending aneuploidy - diploid      ascdip
 # rate2 descending aneuploidy - diploid     descdip
 # rate5 polyploidization                    polypl
 #
-# rates 3,4,6 are only present when hidden = T
-
-# can additional constraints can be added after this
-# function by using the normal constrain approach
 constrainMkn <- function(data, lik){
+  #diversitree needs states 1->n but we need to keep track
+  #of actual numbers so that is the first step
+  chrom.numbs <- colnames(data)
   # create and store variable for padding rate names
   if(ncol(data) < 100) pad <- 2
   if(ncol(data) >= 100) pad <- 3
@@ -25,21 +23,21 @@ constrainMkn <- function(data, lik){
   parMat <- matrix(0,ncol(data),ncol(data))
   # make the components of the rate names the column and row
   # names this will allow for easy creation of constraints later
-  colnames(parMat) <- sprintf(paste('%0', pad, 'd', sep=""), as.numeric(colnames(data)))
+  colnames(parMat) <- sprintf(paste('%0', pad, 'd', sep=""), 1:ncol(data))
   rownames(parMat) <- colnames(parMat)
   # now we have a matrix with all zeros but the right state names
   # in the column and row names
-  # this will allow us to fit the old fashioned chromevol 
-  # model just as easily with very little overhead
+  ### Now we use our chrom.numbs to lookup values and fill in the matrix
+  
     for(i in 1:(nrow(parMat) - 1)){
-      if((as.numeric(colnames(parMat))[i] * 2) <= max(as.numeric(colnames(parMat)))){
-        parMat[i, i+as.numeric(colnames(parMat))[i]] <- 5 #polyploidy
+      if((as.numeric(chrom.numbs)[i] * 2) <= max(as.numeric(chrom.numbs))){
+        parMat[i, i+as.numeric(chrom.numbs[i])] <- 5 #polyploidy
       } 
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy
       parMat[(i + 1), i] <- 2 #descending aneuploidy
     }
   # special case for 1->2
-  if(as.numeric(rownames(parMat)[1]) == 1) parMat[1,2] <- 9
+  if(as.numeric(chrom.numbs[1]) == 1) parMat[1,2] <- 9
   # each of these vectors will hold the formulae for that class of
   # parameters (described up at the top)
   restricted <- ascdip <- descdip <- polypl <- spec <- vector()
