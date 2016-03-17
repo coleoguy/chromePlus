@@ -41,13 +41,12 @@ system(command = "./chromEvol params.txt")
 #For optimization issues the tree branches were multiplied by 0.229043
 #To preserve the original time unit the model parameters should be multiplied by the same factor !!!
 #Final Model parameters
-# LOSS_CONST	4.57825
-# GAIN_CONST	7.70226
+# LOSS_CONST	4.57825     =   1.048616
+# GAIN_CONST	7.70226     =   1.764149
 # DUPL	1.67884e-10
 # LogLikelihood = -120.253
 # Likelihood = 5.95139e-53
 # AIC (Akaike information criterion) = 246.507
-
 
 
 
@@ -58,41 +57,33 @@ system(command = "./chromEvol params.txt")
 d.data <- cbind(names(data), data)
 d.data <- datatoMatrix(x=d.data, excess=.25, hidden=F)
 d.data <- d.data[, 5:18]
-# Now we make the full likelihood function
-lik <- make.mkn(tree,states=d.data,k=14,strict=F)
-# Make sure it is a working function
-lik(rep(.5, 182))
+
+# scale tree to chromevol length
+s.tree <- tree
+s.tree$edge.length <- tree$edge.length * 0.229043 
+
+# Now we make the full likelihood functions
+lik <- make.mkn(tree, states=d.data,k=14,strict=F)
+s.lik <- make.mkn(s.tree, states=d.data,k=14,strict=F)
+
 # Constrain to chromevol
 lik.con <- constrainMkn(d.data, lik)
-# still works
-lik.con(rep(.5,3))
+s.lik.con <- constrainMkn(d.data, s.lik)
+
 # find MLE
-result <- find.mle(lik.con,x.init=runif(min = 0, max = 1, 3))
+result <- matrix(,100,8)
+for(i in 1:100){
+  print(i)
+  foo <- find.mle(lik.con,x.init=runif(min = 0, max = 3, 3))
+  sfoo <- find.mle(s.lik.con,x.init=runif(min = 0, max = 3, 3))
+  result[i, 1:8] <- c(foo$par, foo$lnLik, sfoo$par, sfoo$lnLik)
+}
+colnames(result) <- c("asc","desc","poly","llik","sasc","sdesc","spoly","sllik")
 
-# LOSS_CONST	1.072065
-# GAIN_CONST	1.702783
-# DUPL	5.792263e-08 = 0ish
+# evaluate results
+plot(result[,8])
+result[1:10,]
+
+result[result[,8] > -119, 1]
 
 
-
-
-# Now lets repeat this with the diversitree version
-# First we get our chromosome numbers into a probability matrix
-d.data <- cbind(names(data), data)
-d.data <- datatoMatrix(x=d.data, excess=.25, hidden=F)
-d.data <- d.data[, 5:18]
-# Now we make the full likelihood function
-lik <- make.musse(tree,states=d.data,k=16,strict=F)
-# Make sure it is a working function
-lik(rep(.5, 272))
-# Constrain to chromevol
-lik.con <- constrainMuSSE(d.data, lik, hidden=F, s.lambda=T, s.mu=T, polyploidy=T)
-# still works
-lik.con(rep(.5,67))
-# find MLE
-result <- find.mle(lik.con,x.init=runif(min = 0, max = 1, 5))
-# LOSS_CONST	1.072065
-# GAIN_CONST	1.702783
-# DUPL	5.792263e-08 = 0ish
-
-# so these results are within 1% of true values
