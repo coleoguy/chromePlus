@@ -23,7 +23,7 @@ datatoMatrix <- function(x, range, hyper = T){
   }
   if(hyper == F){
     dmat <- matrix(0, nrow(x), matsize)
-    states <- as.character(1:matsize)
+    states <- as.character(range[1]:range[2])
     colnames(dmat) <- states
     row.names(dmat) <- x[, 1]
     for(i in 1:nrow(x)){
