@@ -25,26 +25,24 @@ constrainMkn <- function(data, lik){
   parMat <- matrix(0,ncol(data),ncol(data))
   # make the components of the rate names the column and row
   # names this will allow for easy creation of constraints later
-  colnames(parMat) <- sprintf(paste('%0', pad, 'd', sep=""), 1:ncol(parMat))
+  colnames(parMat) <- sprintf(paste('%0', pad, 'd', sep=""), as.numeric(colnames(data)))
   rownames(parMat) <- colnames(parMat)
   # now we have a matrix with all zeros but the right state names
   # in the column and row names
   # this will allow us to fit the old fashioned chromevol 
   # model just as easily with very little overhead
     for(i in 1:(nrow(parMat) - 1)){
-      if((i * 2) <= ncol(parMat)) parMat[i, i*2] <- 5 #polyploidy
+      if((as.numeric(colnames(parMat))[i] * 2) <= max(as.numeric(colnames(parMat)))){
+        parMat[i, i+as.numeric(colnames(parMat))[i]] <- 5 #polyploidy
+      } 
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy
       parMat[(i + 1), i] <- 2 #descending aneuploidy
     }
-    split <- ncol(parMat)/2
-    for(i in 1:(split - 1)){
-      if((i * 2) <= split) parMat[i, (i * 2 + split)] <- 5 #polyploidy
-      parMat[i, (i + 1)] <- 1 #ascending aneuploidy - diploids
-      parMat[(i + 1), i] <- 2 #descending aneuploidy - diploids
-    }
+  # special case for 1->2
+  if(as.numeric(rownames(parMat)[1]) == 1) parMat[1,2] <- 9
   # each of these vectors will hold the formulae for that class of
   # parameters (described up at the top)
-  restricted <- ascdip <- descdip <- ascpol <- descpol <- polypl <- redip <- vector()
+  restricted <- ascdip <- descdip <- polypl <- spec <- vector()
   for(i in 1:nrow(parMat)){ # by rows then
     for(j in 1:ncol(parMat)){ # by cols
       if(parMat[i, j] == 0 & i != j){
