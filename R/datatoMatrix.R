@@ -12,8 +12,8 @@ datatoMatrix <- function(x, range, hyper = T){
   matsize <- range[2]-range[1]+1
   if(hyper == T){
     dmat <- matrix(0, nrow(x), matsize * 2)
-    states <- c(as.character(1:matsize),
-                paste(as.character(1:matsize), "h", sep = ""))
+    states <- c(as.character(range[1]:range[2]),
+                paste(as.character(range[1]:range[2]), "h", sep = ""))
     colnames(dmat) <- states
     row.names(dmat) <- x[, 1]
     for(i in 1:nrow(x)){
