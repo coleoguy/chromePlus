@@ -5,28 +5,25 @@
 Convert a typical data table to probability matrix 
 }
 \description{
-Returns a probability matrix where each column represents a discrete state and each row is a species.  Values in the matrix describe the probability of being in any of these states.
+Returns a probability matrix where each column represents a discrete state and each row is a species.  Values in the matrix describe the probability of being in any of these states. If a hyper state is specified each species is assumed to be present with equal probability in either hyper state.
 }
 \usage{
-datatoMatrix(x)
+datatoMatrix(x, range, hyper = F)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{
 a dataframe where the first column is the species name and the second column is the state observed in each tip
 }
-  \item{excess}{
-how far beyond the observed states do you want to allow in your analysis
+  \item{range}{
+a vector of length two with the first element equal to the lowest chromosome number to be included in the model and the second element equal to the highest chromosome number to be included in the model.
 }
-  \item{hidden}{
-if true model will include a binary meta state that will can have distinct rates of chromosome number evolution
+  \item{hyper}{
+If `TRUE` model will include a binary hyper state that can have distinct rates of chromosome number evolution
 }
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-constrained likelihood function is returned
+a probability matrix is returned
 }
 \references{
 %% ~put references to the literature/web site here ~
