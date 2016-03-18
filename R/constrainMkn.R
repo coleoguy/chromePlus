@@ -105,16 +105,16 @@ constrainMkn <- function(data, lik, model="single"){
         spec <- c(spec, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 'polypl'+'ascdip'", sep="" ))
       }
       
-      if(parMat[i, j] == 1){
+      if(parMat[i, j] == 3){
         asc.h <- c(asc.h, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc.h", sep="" ))
       }
-      if(parMat[i, j] == 2){
+      if(parMat[i, j] == 4){
         desc.h <- c(desc.h, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc.h", sep="" ))
       }
-      if(parMat[i, j] == 5){
+      if(parMat[i, j] == 6){
         polypl.h <- c(polypl.h, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ polypl.h", sep="" ))
       }
-      if(parMat[i, j] == 9){
+      if(parMat[i, j] == 10){
         spec.h <- c(spec.h, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 'polypl.h'+'asc.h'", sep="" ))
       }
     }

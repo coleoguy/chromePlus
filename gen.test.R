@@ -61,12 +61,15 @@ hp.mat[1, 6]<-0
 h.lik <- make.mkn(tree, states=hp.mat, k=20, strict=F)
 
 # Constrain to chromevol (w/o hyperstate)
-lik.con <- constrainMkn(p.mat, lik)
+lik.con <- constrainMkn(p.mat, lik, model="single")
 
 # Constrain to chromevol (w hyperstate)
-h.lik.con <- constrainMkn(hp.mat, h.lik)
+h.lik.con <- constrainMkn(hp.mat, h.lik, model="hyper")
 
 # find MLE
 foo <- find.mle(lik.con, x.init = startVals(3, 0, 1))
+
+# figure this out later
+foo <- find.mle(h.lik.con, x.init = startVals(6, 0, 1))
 
   
