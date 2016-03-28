@@ -60,7 +60,7 @@ constrainMkn <- function(data, lik, model="single"){
         parMat[i, (i + 1)] <- 1 #ascending aneuploidy
         parMat[(i + 1), i] <- 2 #descending aneuploidy
       }
-      if(i >= split){
+      if(i > split){
         if((as.numeric(chrom.numbs)[i] * 2) <= max(as.numeric(chrom.numbs))){
           parMat[i, i+as.numeric(chrom.numbs[i])] <- 6 #polyploidy
         } 
