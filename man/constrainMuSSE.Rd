@@ -8,7 +8,7 @@ Constrain a diversitree MuSSE model
 Returns a likelihood function that has been constrained to match an MuSSE model of chromosome evolution yielding essentially the original chromevol model.
 }
 \usage{
-constrainMuSSE(x)
+constrainMuSSE <- function(data, lik, hidden, s.lambda, s.mu, polyploidy)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -19,16 +19,16 @@ This is the data matrix created by running \code{dataMatrx}
 This is a likelihood function created with make.MuSSE
 }
   \item{hidden}{
-If true then a binary metastate is assumed
-}
-  \item{polyploidy}{
-If true then polyploidy is assumed to be the metastate
+If \code{TRUE} then a binary metastate is assumed
 }
   \item{s.lambda}{
-If true a single value of lambda is assumed
+If \code{TRUE} a single value of lambda is assumed across metastates
 }
   \item{s.mu}{
-If true a single value of mu is assumed
+If \code{TRUE} a single value of mu is assumed across metastates
+}
+  \item{polyploidy}{
+If \code{TRUE} then polyploidy is assumed to be the metastate
 }
 }
 \details{

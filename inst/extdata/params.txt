@@ -1,0 +1,10 @@
+_mainType Optimize_Model
+_outDir Test
+_dataFile chrom.txt
+_treeFile tree.new
+_minChrNum 5
+_maxChrNum 18
+_simulationsNum 0
+_gainConstR = 1
+_lossConstR = 1
+_duplConstR = 1
