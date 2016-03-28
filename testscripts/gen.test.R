@@ -5,7 +5,7 @@ library(geiger)
 library(diversitree)
 
 
-####
+########################
 #### Data simulation section
 ####
 # Make a birth-death tree
@@ -26,6 +26,7 @@ hist(data, breaks=range(data)[2]-range(data)[1])
 ###
 ###
 ###
+########################
 
 ###
 ### Loading data
@@ -36,40 +37,52 @@ data("chrom")
 ###
 ###
 
+range <- c(min(chrom)-2,max(chrom)+2)
+
 # convert chromosome number to format for diversitree
 d.data <- cbind(names(chrom), chrom)
-p.mat <- datatoMatrix(x=d.data, range=c(8,17), hyper=F)
+p.mat <- datatoMatrix(x=d.data, range=range, hyper=F)
 
 # convert chromosome number to format for diversitree with hyperstate
 d.data <- cbind(names(chrom), chrom)
-hp.mat <- datatoMatrix(x=d.data, range=c(8,17), hyper=T)
+hp.mat <- datatoMatrix(x=d.data, range=range, hyper=T)
 
 # Now we make the full mkn likelihood function (w/o hyper state)
-lik <- make.mkn(tree, states=p.mat, k=10, strict=F)
-
-# Now we make the full mkn likelihood function (w hyper state)
-h.lik <- make.mkn(tree, states=hp.mat, k=20, strict=F)
-#######
-#######
-####### This illustrates the outstanding problem of 
-####### how we deal with all unknowns in the mkn framework
-#######
-#######
-
-# For our purposes we can manually fix one
-hp.mat[1, 6]<-0
-h.lik <- make.mkn(tree, states=hp.mat, k=20, strict=F)
-
+lik <- make.mkn(tree, states=p.mat, k=ncol(p.mat), strict=F)
 # Constrain to chromevol (w/o hyperstate)
 lik.con <- constrainMkn(p.mat, lik, model="single")
-
-# Constrain to chromevol (w hyperstate)
-h.lik.con <- constrainMkn(hp.mat, h.lik, model="hyper")
-
 # find MLE
-foo <- find.mle(lik.con, x.init = startVals(3, 0, 1))
+foo <- find.mle(lik.con, x.init = startVals(length(argnames(lik.con)), 0, 1))
 
-# figure this out later
-foo <- find.mle(h.lik.con, x.init = startVals(6, 0, 1))
+# Now we make the full mkn likelihood function (w hyper state)
+h.lik <- make.mkn(tree, states=hp.mat, k=ncol(hp.mat), strict=F)
 
-  
+####### This illustrates the outstanding problem of 
+####### how we deal with all unknowns in the diversitree framework
+
+# For our purposes we can manually fix one
+hp.mat[1, 6] <- 0 
+
+# this will allow us to run make.mkn without error
+h.lik <- make.mkn(tree, states=hp.mat, k=ncol(hp.mat), strict=F)
+
+# but we can't get a likelihood
+h.lik(startVals(380,0,1))
+
+# we could check that nothing odd is going on by getting rid of all uncertainty
+hp.mat[,] <- 0
+for(i in 1:nrow(hp.mat)){
+  hp.mat[i, sample(1:20, 1)] <- 1
+}
+
+# now it works
+h.lik <- make.mkn(tree, states=hp.mat, k=ncol(hp.mat), strict=F)
+h.lik(startVals(380,0,1))
+
+# add one taxa uncertain
+hp.mat[1,] <- 0
+hp.mat[1, c(1,11)]<-.5
+
+# mkn now fails
+h.lik <- make.mkn(tree, states=hp.mat, k=ncol(hp.mat), strict=F)
+h.lik(startVals(380,0,1))
