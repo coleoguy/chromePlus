@@ -1,6 +1,6 @@
 # this makes the data matrix for chromevol analysis
 # x: is a dataframe col 1 is names col 2 is chromosome
-# counts.
+# counts column 3 is probability in metastate 1.
 # excess: this how far over highest count we should
 # include in the model for instance we allow that
 # the highes number on phylogeny may be some point
@@ -17,8 +17,8 @@ datatoMatrix <- function(x, range, hyper = T){
     colnames(dmat) <- states
     row.names(dmat) <- x[, 1]
     for(i in 1:nrow(x)){
-      dmat[i, which(colnames(dmat) == x[i, 2])] <- .5
-      dmat[i, which(colnames(dmat) == x[i, 2]) + matsize] <- .5
+      dmat[i, which(colnames(dmat) == x[i, 2])] <- x[,3]
+      dmat[i, which(colnames(dmat) == x[i, 2]) + matsize] <- 1-x[,3]
     }
   }
   if(hyper == F){
