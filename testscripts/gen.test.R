@@ -4,6 +4,9 @@ library(chromevolR)
 library(geiger)
 library(diversitree)
 
+# Rich says that in MKN the ode method may be best choice when the nubmer of 
+# states is very large...
+# add this to make.mkn below somewhere: control=list(method="ode")
 
 ########################
 #### Data simulation section
