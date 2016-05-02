@@ -17,8 +17,8 @@ datatoMatrix <- function(x, range, hyper = T){
     colnames(dmat) <- states
     row.names(dmat) <- x[, 1]
     for(i in 1:nrow(x)){
-      dmat[i, which(colnames(dmat) == x[i, 2])] <- x[,3]
-      dmat[i, which(colnames(dmat) == x[i, 2]) + matsize] <- 1-x[,3]
+      dmat[i, which(colnames(dmat) == x[i, 2])] <- x[i,3]
+      dmat[i, which(colnames(dmat) == x[i, 2]) + matsize] <- 1-x[i,3]
     }
   }
   if(hyper == F){
