@@ -1,27 +1,23 @@
-# returns a constrained diversitree likelihood 
-# equation
-#
-# arguments 
-# data: this is the data matrix in the format for
-# for make.mkn in diversitree
-# hidden: T or F indicating if a hidden state for 
-# polyploidy is present
-#
+
 # rates that are implemented include
-# rate1 ascending aneuploidy - diploid      ascdip
-# rate2 descending aneuploidy - diploid     descdip
-# rate3 ascending aneuploidy - polyploid    ascpol
-# rate4 descending aneuploidy - polyploid   descpol
-# rate5 polyploidization                    polypl
-# rate6 rediploidization                    redip
+# rate1 ascending aneuploidy - diploid      asc1
+# rate2 descending aneuploidy - diploid     desc1
+# rate3 ascending aneuploidy - polyploid    asc2
+# rate4 descending aneuploidy - polyploid   desc2
+# rate5 polyploidization of diploid          poly1
+# rate6 polploidization of polyploid         poly2
+# rate7 rediploidization                    redip
+# rate8 rediploidization                    tran12
+# rate9 rediploidization                    tran21
 #
-# rates 3,4,6 are only present when hidden = T
 
 # can additional constraints can be added after this
 # function by using the normal constrain approach
 
 constrainMuSSE <- function(data, lik, hidden = T, 
                            s.lambda = T, s.mu = T, polyploidy = T){
+  
+  ## BUILD AN EMPTY MATRIX MATCHING OUR MODEL
   # create and store variable for padding rate names
   if(ncol(data) < 100) pad <- 2
   if(ncol(data) >= 100) pad <- 3
@@ -34,33 +30,67 @@ constrainMuSSE <- function(data, lik, hidden = T,
   rownames(parMat) <- colnames(parMat)
   # now we have a matrix with all zeros but the right state names
   # in the column and row names
-  # this will allow us to fit the old fashioned chromevol 
-  # model just as easily with very little overhead
+  
+  # we need to know where our duplication 
+  # of the matrix begins so here is that
+  split <- ncol(parMat)/2
+  
+  # we also need the actual chromosome numbers
+  if(hidden==T) chroms <- as.numeric(colnames(chrom.matrix)[1:split])
+  if(hidden==F) chroms <- as.numeric(colnames(chrom.matrix))
+  
+  ## NOW WE HAVE A SERIES OF LOOPS THAT FILL IN OUR parMAT 
+  ## MATRIX WITH NUMBERS 1:9 INDICATIVE OF THE DIFFERENT POSSIBLE
+  ## RATES WE WISH TO INCLUDE IN OUR MODEL.  EACH OF THESE LOOPS
+  ## REPRESENT A DIFFERENT MODEL OF CHROMOSOME EVOLUTION
+  
+  ## OLD CRHOMEVOL MODEL
   if(hidden==F){
     for(i in 1:(nrow(parMat) - 1)){
-      if((i * 2) <= ncol(parMat)) parMat[i, i*2] <- 5 #polyploidy
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy
       parMat[(i + 1), i] <- 2 #descending aneuploidy
+      if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms==(chroms[i]*2))] <- 5 #polyploidy
     }
     # currently this has the issue of missing polyploidy for q12
     # this transition should be = ascending + polyploidy this should
-    # give me a hard inelligent fix..... or not recasting issue negated this as
-    # a possible fix
-    # parMat[1,2] <- 9
   }
-  # this is the new model with hidden states
-  #### we will add a second version of this for simple hiddent trait
+  
+  # MODEL 1 PLOIDY IS HIDDEN STATE
   if(hidden==T & polyploidy == T){
-    split <- ncol(parMat)/2
+    # diploid rates
     for(i in 1:(split - 1)){
-      if((i * 2) <= split) parMat[i, (i * 2 + split)] <- 5 #polyploidy
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy - diploids
       parMat[(i + 1), i] <- 2 #descending aneuploidy - diploids
+      ###THIS IS WHERE WE NEED TO START FIXING THINGS USING THIS NEW CHROMS VECTOR
+      if((i * 2) <= split) parMat[i, (i * 2 + split)] <- 5 #polyploidy
     }
+    # polyploid rates
     for(i in (split + 1):(nrow(parMat) - 1)){
       parMat[i, (i + 1)] <- 3 #ascending aneuploidy - polyploids
       parMat[(i + 1), i] <- 4 #descending aneuploidy - polyploids
-      parMat[i, (i - split)] <- 6 #rediploidization
+      
+      if(  (split + ((i-split)*2)) <= ncol(parMat)     ) parMat[i, (i * 2 + split)] <- 5 #polyploidy
+      
+      
+      parMat[i, (i - split)] <- 7 #rediploidization
+      # special case for last row
+      if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 7 #rediploidization
+    }
+  }
+  
+  # this is the new model with hidden state not being ploidy
+  if(hidden==T & polyploidy == F){
+    split <- ncol(parMat)/2
+    for(i in 1:(split - 1)){
+      if((i * 2) <= split) parMat[i, (i * 2)] <- 5 #polyploidy state 1
+      parMat[i, (i + 1)] <- 1 #ascending aneuploidy - state 1
+      parMat[(i + 1), i] <- 2 #descending aneuploidy - state 1
+    }
+    for(i in (split + 1):(nrow(parMat) - 1)){
+      if(split + (i-split)*2 <= ncol(parMat)) parMat[i, (split+2*(i-split))] <- 5 #polyploidy state 2
+      parMat[i, (i + 1)] <- 3 #ascending aneuploidy - state 2
+      parMat[(i + 1), i] <- 4 #descending aneuploidy - state 2
+      parMat[i, (i - split)] <- 6 # state 2 to state 1
       if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 6 #rediploidization
     }
   }
