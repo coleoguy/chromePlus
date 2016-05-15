@@ -6,9 +6,9 @@
 # rate4 descending aneuploidy - polyploid   desc2
 # rate5 polyploidization of diploid          poly1
 # rate6 polploidization of polyploid         poly2
-# rate7 rediploidization                    redip
-# rate8 rediploidization                    tran12
-# rate9 rediploidization                    tran21
+# rate7 rediploidization of a polyploid
+# rate8 transitions from 1 to 2 for hyperstate
+# rate9 transitions from 2 to 1 for hyperstate
 #
 
 # can additional constraints can be added after this

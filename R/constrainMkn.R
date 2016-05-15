@@ -14,8 +14,7 @@
 # can additional constraints can be added after this
 # function by using the normal constrain approach
 
-constrainMkn <- function(data, lik, hidden = T, 
-                           s.lambda = T, s.mu = T, polyploidy = T, verbose=F){
+constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
   
   ## BUILD AN EMPTY MATRIX MATCHING OUR MODEL
   # create and store variable for padding rate names
@@ -36,8 +35,8 @@ constrainMkn <- function(data, lik, hidden = T,
   split <- ncol(parMat)/2
   
   # we also need the actual chromosome numbers
-  if(hidden==T) chroms <- as.numeric(colnames(chrom.matrix)[1:split])
-  if(hidden==F) chroms <- as.numeric(colnames(chrom.matrix))
+  if(hyper==T) chroms <- as.numeric(colnames(chrom.matrix)[1:split])
+  if(hyper==F) chroms <- as.numeric(colnames(chrom.matrix))
   
   ## NOW WE HAVE A SERIES OF LOOPS THAT FILL IN OUR parMAT 
   ## MATRIX WITH NUMBERS 1:9 INDICATIVE OF THE DIFFERENT POSSIBLE
@@ -45,7 +44,7 @@ constrainMkn <- function(data, lik, hidden = T,
   ## REPRESENT A DIFFERENT MODEL OF CHROMOSOME EVOLUTION
   
   ## OLD CRHOMEVOL MODEL
-  if(hidden==F){
+  if(hyper==F){
     print("Constraining model to simple chromevol version")
     for(i in 1:(nrow(parMat) - 1)){
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy
@@ -57,7 +56,7 @@ constrainMkn <- function(data, lik, hidden = T,
   }
   
   # MODEL 1 PLOIDY IS HIDDEN STATE
-  if(hidden==T & polyploidy == T){
+  if(hyper==T & polyploidy == T){
     print("Constraining model where ploidy is a meta state and different rates of chromosome evolution are possible based on being polyploid or diploid")
     # diploid rates
     for(i in 1:(split - 1)){
@@ -77,7 +76,7 @@ constrainMkn <- function(data, lik, hidden = T,
   }
   
   # MODEL 2 PLOIDY IS NOT THE HYPER STATE
-  if(hidden==T & polyploidy == F){
+  if(hyper==T & polyploidy == F){
     print("Constraining model with a hyper state that may have different rates of chromsome number evolution")
     # state 1 rates
     for(i in 1:(split - 1)){

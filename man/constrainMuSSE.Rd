@@ -8,7 +8,7 @@ Constrain a diversitree MuSSE model
 Returns a likelihood function that has been constrained to match an MuSSE model of chromosome evolution yielding essentially the original chromevol model.
 }
 \usage{
-constrainMuSSE <- function(data, lik, hidden, s.lambda, s.mu, polyploidy)
+constrainMuSSE <- function(data, lik, hidden, s.lambda, s.mu, polyploidy, verbose)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -30,9 +30,31 @@ If \code{TRUE} a single value of mu is assumed across metastates
   \item{polyploidy}{
 If \code{TRUE} then polyploidy is assumed to be the metastate
 }
+  \item{verbose}{
+If \code{TRUE} then a list is returned with the first element containing the likelihood function and the second containing the rate identity matrix.
+}
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+If the rate identity matrix is returned rates are indicated by the numbers:
+
+rate1 ascending aneuploidy - diploid or state 1 of hypertrait
+
+rate2 descending aneuploidy - diploid or state 1 of hypertrait
+
+rate3 ascending aneuploidy - polyploid or state 2 of hypertrait
+
+rate4 descending aneuploidy - polyploid or state 2 of hypertrait
+
+rate5 polyploidization of a diploid or state 1 of hypertrait
+
+rate6 polploidization of a polyploid or state 2 of hypertrait
+
+rate7 rediploidization of a polyploid
+
+rate8 transitions from state 1 to 2 of hypertrait
+
+rate9 transitions from state 2 to 1 of hypertrait
+
 }
 \value{
 constrained likelihood function is returned

@@ -13,13 +13,13 @@ datatoMatrix(x, range, hyper = F)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{
-a dataframe where the first column is the species name and the second column is the state observed in each tip
+a dataframe where the first column is the species name, the second column is the number of chromosomes, and the third is the probability in being in state 1 of trait 2
 }
   \item{range}{
 a vector of length two with the first element equal to the lowest chromosome number to be included in the model and the second element equal to the highest chromosome number to be included in the model.
 }
   \item{hyper}{
-If `TRUE` model will include a binary hyper state that can have distinct rates of chromosome number evolution
+If `TRUE` model will include a binary hyper state (col 3 of input data) that can have distinct rates of chromosome number evolution
 }
 }
 \value{

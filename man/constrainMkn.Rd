@@ -8,7 +8,7 @@ Constrain a diversitree mkn model
 Returns a likelihood function that has been constrained to match an mkn model of chromosome evolution yielding essentially the original chromevol model.
 }
 \usage{
-constrainMkn(data, lik, model)
+constrainMkn(data, lik, hyper, polyploidy, verbose)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,12 +18,37 @@ This is the data matrix created by running \code{dataMatrx}
   \item{lik}{
 This is a likelihood function created with make.mkn
 }
-  \item{model}{
-This is text string specifying the model being used. Options are: "single" for a single chromosome number transition matrix. "hyper" for a model where the state of a binary trait determines which transition matrix is used.  This allows for each binary state to have idiosyncratic rates of chromosome number evolution. "ploidy" in this model the binary trait is ploidy such that diploids and polyploids can have their own rate of evolution.
+  \item{hyper}{
+\code{TRUE} indicates that a hyperstate col 3 of data is presesnt 
 }
+  \item{polyploidy}{
+\code{TRUE} indicates that hyperstate is ploidy 
+}
+  \item{verbose}{
+If \code{TRUE} then a list is returned with the first element containing the likelihood function and the second containing the rate identity matrix.
+}
+
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+If the rate identity matrix is returned rates are indicated by the numbers:
+
+rate1 ascending aneuploidy - diploid or state 1 of hypertrait
+
+rate2 descending aneuploidy - diploid or state 1 of hypertrait
+
+rate3 ascending aneuploidy - polyploid or state 2 of hypertrait
+
+rate4 descending aneuploidy - polyploid or state 2 of hypertrait
+
+rate5 polyploidization of a diploid or state 1 of hypertrait
+
+rate6 polploidization of a polyploid or state 2 of hypertrait
+
+rate7 rediploidization of a polyploid
+
+rate8 transitions from state 1 to 2 of hypertrait
+
+rate9 transitions from state 2 to 1 of hypertrait
 }
 \value{
 constrained likelihood function is returned
