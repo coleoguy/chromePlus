@@ -15,7 +15,7 @@
 # function by using the normal constrain approach
 
 constrainMuSSE <- function(data, lik, hidden = T, 
-                           s.lambda = T, s.mu = T, polyploidy = T){
+                           s.lambda = T, s.mu = T, polyploidy = T, verbose=F){
   
   ## BUILD AN EMPTY MATRIX MATCHING OUR MODEL
   # create and store variable for padding rate names
@@ -46,6 +46,7 @@ constrainMuSSE <- function(data, lik, hidden = T,
   
   ## OLD CRHOMEVOL MODEL
   if(hidden==F){
+    print("Constraining model to simple chromevol version")
     for(i in 1:(nrow(parMat) - 1)){
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy
       parMat[(i + 1), i] <- 2 #descending aneuploidy
@@ -57,75 +58,91 @@ constrainMuSSE <- function(data, lik, hidden = T,
   
   # MODEL 1 PLOIDY IS HIDDEN STATE
   if(hidden==T & polyploidy == T){
+    print("Constraining model where ploidy is a meta state and different rates of chromosome evolution are possible based on being polyploid or diploid")
     # diploid rates
     for(i in 1:(split - 1)){
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy - diploids
       parMat[(i + 1), i] <- 2 #descending aneuploidy - diploids
-      ###THIS IS WHERE WE NEED TO START FIXING THINGS USING THIS NEW CHROMS VECTOR
-      if((i * 2) <= split) parMat[i, (i * 2 + split)] <- 5 #polyploidy
+      if((chroms[i] * 2) <= max(chroms)) parMat[i, (which(chroms[i] * 2 == chroms) + split)] <- 5 #polyploidy-1
     }
     # polyploid rates
     for(i in (split + 1):(nrow(parMat) - 1)){
       parMat[i, (i + 1)] <- 3 #ascending aneuploidy - polyploids
       parMat[(i + 1), i] <- 4 #descending aneuploidy - polyploids
-      
-      if(  (split + ((i-split)*2)) <= ncol(parMat)     ) parMat[i, (i * 2 + split)] <- 5 #polyploidy
-      
-      
+      if((chroms[i-split] * 2) <= max(chroms)) parMat[i, (which(chroms[i-split] * 2 == chroms) + split)] <- 6 #polyploidy-2
       parMat[i, (i - split)] <- 7 #rediploidization
       # special case for last row
       if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 7 #rediploidization
     }
   }
   
-  # this is the new model with hidden state not being ploidy
+  # MODEL 2 PLOIDY IS NOT THE HYPER STATE
   if(hidden==T & polyploidy == F){
-    split <- ncol(parMat)/2
+    print("Constraining model with a hyper state that may have different rates of chromsome number evolution")
+    # state 1 rates
     for(i in 1:(split - 1)){
-      if((i * 2) <= split) parMat[i, (i * 2)] <- 5 #polyploidy state 1
-      parMat[i, (i + 1)] <- 1 #ascending aneuploidy - state 1
-      parMat[(i + 1), i] <- 2 #descending aneuploidy - state 1
+      parMat[i, (i + 1)] <- 1 #ascending aneuploidy - 1
+      parMat[(i + 1), i] <- 2 #descending aneuploidy - 1
+      if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms==(chroms[i]*2))] <- 5 #polyploidy - 1
+      parMat[i, (i+split)] <- 8 # transitions state 1->2
+      # special case for last row
+      if(i == (split - 1)) parMat[(i + 1), (i + 1 + split)] <- 8 # transitions state 2->1
+      
     }
+    # state 2 rates
     for(i in (split + 1):(nrow(parMat) - 1)){
-      if(split + (i-split)*2 <= ncol(parMat)) parMat[i, (split+2*(i-split))] <- 5 #polyploidy state 2
-      parMat[i, (i + 1)] <- 3 #ascending aneuploidy - state 2
-      parMat[(i + 1), i] <- 4 #descending aneuploidy - state 2
-      parMat[i, (i - split)] <- 6 # state 2 to state 1
-      if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 6 #rediploidization
+      parMat[i, (i + 1)] <- 3 #ascending aneuploidy - 2
+      parMat[(i + 1), i] <- 4 #descending aneuploidy - 2
+      if((chroms[i-split] * 2) <= max(chroms)) parMat[i, (which(chroms[i-split] * 2 == chroms) + split)] <- 6 #polyploidy-2
+      parMat[i, (i - split)] <- 9 #transition state 2->1
+      # special case for last row
+      if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 9 # transitions state 2->1
     }
   }
-  # we now have a matrix with a number 1-6 that matches the rates present
-  # under either of our models hidden or not we will use this to build our 
+  
+  
+  
+  
+  
+  
+  # we now have a matrix with a number 1-9 that matches the rates present
+  # under one of our models we will use this to build our 
   # arguments for the standard diversitree constrain function
   #
   # each of these vectors will hold the formulae for that class of
   # parameters (described up at the top)
-  restricted <- ascdip <- descdip <- ascpol <- descpol <- polypl <- redip <- lambda <- mu <- vector()
+  restricted <- asc1 <- desc1 <- asc2 <- desc2 <- pol1 <- pol2 <- redip <- tran12 <- tran21 <- lambda <- mu <- vector()
   for(i in 1:nrow(parMat)){ # by rows then
     for(j in 1:ncol(parMat)){ # by cols
       if(parMat[i, j] == 0 & i != j){
         restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
       }
       if(parMat[i, j] == 1){
-        ascdip <- c(ascdip, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ ascdip", sep="" ))
+        asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
       }
       if(parMat[i, j] == 2){
-        descdip <- c(descdip, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ descdip", sep="" ))
+        desc1 <- c(desc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc1", sep="" ))
       }
       if(parMat[i, j] == 3){
-        ascpol <- c(ascpol, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ ascpol", sep="" ))
+        asc2 <- c(asc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc2", sep="" ))
       }
       if(parMat[i, j] == 4){
-        descpol <- c(descpol, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ descpol", sep="" ))
+        desc2 <- c(desc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc2", sep="" ))
       }
       if(parMat[i, j] == 5){
-        polypl <- c(polypl, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ polypl", sep="" ))
+        pol1 <- c(pol1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ pol1", sep="" ))
       }
       if(parMat[i, j] == 6){
+        pol2 <- c(pol2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ pol2", sep="" ))
+      }
+      if(parMat[i, j] == 7){
         redip <- c(redip, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ redip", sep="" ))
       }
+      if(parMat[i, j] == 8){
+        tran12 <- c(tran12, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ tran12", sep=""))
+      }
       if(parMat[i, j] == 9){
-        spec <- c(spec, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 'polypl'+'ascdip'", sep="" ))
+        tran21 <- c(tran21, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ tran21", sep="" ))
       }
     }
   }
@@ -170,10 +187,13 @@ constrainMuSSE <- function(data, lik, hidden = T,
   }
   
   # lets store these in realy obvious names
-  formulae <- c(restricted, ascdip, descdip, ascpol, descpol, polypl, redip, lambda, mu)
-  extras <- c("restricted", "ascdip", "descdip", "ascpol", "descpol", "polypl", "redip", "lambda1", "mu1", "lambda2", "mu2")
+  formulae <- c(restricted, asc1, desc1, asc2, desc2, pol1, pol2, redip, tran12, tran21, lambda, mu)
+  extras <- c("restricted", "asc1", "desc1", "asc2", "desc2", 
+              "pol1", "pol2", "redip", "tran12", "tran21",
+              "lambda1", "mu1", "lambda2", "mu2")
   lik.con <- constrain(lik, formulae=formulae, extra=extras)
-  return(lik.con)
+  if(verbose==T) return(list(lik.con, parMat))
+  if(verbose==F) return(lik.con)
 }
 
 
