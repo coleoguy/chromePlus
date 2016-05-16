@@ -77,24 +77,18 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
         if(x %% 1 == 0)  parMat[i, (which(chroms==x) + split)] <- 10 #demiploidy state1 even
         if(x %% 1 != 0)  parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <- 11 #demiploidy state 1 odd
       }
-      
-      
     }
     # polyploid rates
     for(i in (split + 1):(nrow(parMat) - 1)){
       parMat[i, (i + 1)] <- 3 #ascending aneuploidy - polyploids
       parMat[(i + 1), i] <- 4 #descending aneuploidy - polyploids
       if((chroms[i-split] * 2) <= max(chroms)) parMat[i, (which(chroms[i-split] * 2 == chroms) + split)] <- 6 #polyploidy-2
-      
       # demiploidy
       if((ceiling(chroms[i-split] * 1.5)) <= max(chroms)){
         x <- chroms[i-split] * 1.5
         if(x %% 1 == 0)  parMat[i, (which(chroms==x) + split)] <- 12 #demiploidy state1 even
         if(x %% 1 != 0)  parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <- 13 #demiploidy state 1 odd
       }
-      
-      
-      
       parMat[i, (i - split)] <- 7 #rediploidization
       # special case for last row
       if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 7 #rediploidization
@@ -109,16 +103,32 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy - 1
       parMat[(i + 1), i] <- 2 #descending aneuploidy - 1
       if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms==(chroms[i]*2))] <- 5 #polyploidy - 1
+      # demiploidy
+      if((ceiling(chroms[i] * 1.5)) <= max(chroms)){
+        x <- chroms[i] * 1.5
+        if(x %% 1 == 0)  parMat[i, which(chroms==x)] <- 10 #demiploidy state1 even
+        if(x %% 1 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- 11 #demiploidy state 1 odd
+      }
+      
       parMat[i, (i+split)] <- 8 # transitions state 1->2
       # special case for last row
       if(i == (split - 1)) parMat[(i + 1), (i + 1 + split)] <- 8 # transitions state 2->1
-      
     }
     # state 2 rates
     for(i in (split + 1):(nrow(parMat) - 1)){
       parMat[i, (i + 1)] <- 3 #ascending aneuploidy - 2
       parMat[(i + 1), i] <- 4 #descending aneuploidy - 2
       if((chroms[i-split] * 2) <= max(chroms)) parMat[i, (which(chroms[i-split] * 2 == chroms) + split)] <- 6 #polyploidy-2
+      
+      # demiploidy
+      if((ceiling(chroms[i-split] * 1.5)) <= max(chroms)){
+        x <- chroms[i-split] * 1.5
+        if(x %% 1 == 0)  parMat[i, (which(chroms==x) + split)] <- 12 #demiploidy state1 even
+        if(x %% 1 != 0)  parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <- 13 #demiploidy state 2 odd
+      }
+      
+      
+      
       parMat[i, (i - split)] <- 9 #transition state 2->1
       # special case for last row
       if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 9 # transitions state 2->1
