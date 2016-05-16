@@ -9,10 +9,10 @@
 # rate7 rediploidization                    redip
 # rate8 rediploidization                    tran12
 # rate9 rediploidization                    tran21
-# rate10 demipolyploidy for state1            dem1e even
-# rate11 demipolyploidy for state1            dem1o odd
-# rate12 demipolyploidy for state2            dem1e even
-# rate13 demipolyploidy for state2            dem1o odd
+# rate10 demipolyploidy for state1            dem1 even
+# rate11 demipolyploidy for state1            dem1 odd
+# rate12 demipolyploidy for state2            dem2 even
+# rate13 demipolyploidy for state2            dem2 odd
 
 # can additional constraints can be added after this
 # function by using the normal constrain approach
@@ -94,7 +94,6 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
       parMat[i, (i+split)] <- 8 # transitions state 1->2
       # special case for last row
       if(i == (split - 1)) parMat[(i + 1), (i + 1 + split)] <- 8 # transitions state 2->1
-      
     }
     # state 2 rates
     for(i in (split + 1):(nrow(parMat) - 1)){
@@ -158,6 +157,12 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
       }
       if(parMat[i, j] == 11){
         dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ .5*dem1", sep="" ))
+      }
+      if(parMat[i, j] == 12){
+        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ dem2", sep="" ))
+      }
+      if(parMat[i, j] == 13){
+        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ .5*dem2", sep="" ))
       }
     }
   }
