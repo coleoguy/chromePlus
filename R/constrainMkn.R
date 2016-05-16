@@ -56,9 +56,8 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
       if((ceiling(chroms[i] * 1.5)) <= max(chroms)){
         x <- chroms[i] * 1.5
         if(x %% 2 == 0)  parMat[i, which(chroms==x)] <- 10 #demiploidy state1 even
-        if(x %% 2 != 0)  parMat[i, c(floor(x), ceiling(x))] <- 11 #demiploidy state 1 odd
+        if(x %% 2 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- 11 #demiploidy state 1 odd
       }
-        parMat[i, ]
     }
     # currently this has the issue of missing polyploidy for q12
     # this transition should be = ascending + polyploidy this should
