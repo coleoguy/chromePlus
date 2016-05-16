@@ -9,7 +9,8 @@
 # rate7 rediploidization                    redip
 # rate8 rediploidization                    tran12
 # rate9 rediploidization                    tran21
-#
+# rate10 demipolyploidy for state1            dem1
+# rate11 demipolyploidy for state2            dem2
 
 # can additional constraints can be added after this
 # function by using the normal constrain approach
@@ -35,8 +36,8 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
   split <- ncol(parMat)/2
   
   # we also need the actual chromosome numbers
-  if(hyper==T) chroms <- as.numeric(colnames(chrom.matrix)[1:split])
-  if(hyper==F) chroms <- as.numeric(colnames(chrom.matrix))
+  if(hyper==T) chroms <- as.numeric(colnames(data)[1:split])
+  if(hyper==F) chroms <- as.numeric(colnames(data))
   
   ## NOW WE HAVE A SERIES OF LOOPS THAT FILL IN OUR parMAT 
   ## MATRIX WITH NUMBERS 1:9 INDICATIVE OF THE DIFFERENT POSSIBLE
