@@ -6,9 +6,9 @@
 # rate4 descending aneuploidy - polyploid   desc2
 # rate5 polyploidization of diploid          poly1
 # rate6 polploidization of polyploid         poly2
-# rate7 rediploidization                    redip
-# rate8 rediploidization                    tran12
-# rate9 rediploidization                    tran21
+# rate7 rediploidization of a polyploid
+# rate8 transitions from 1 to 2 for hyperstate
+# rate9 transitions from 2 to 1 for hyperstate
 # rate10 demipolyploidy for state1            dem1 even
 # rate11 demipolyploidy for state1            dem1 odd
 # rate12 demipolyploidy for state2            dem2 even
@@ -119,27 +119,17 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
       parMat[i, (i + 1)] <- 3 #ascending aneuploidy - 2
       parMat[(i + 1), i] <- 4 #descending aneuploidy - 2
       if((chroms[i-split] * 2) <= max(chroms)) parMat[i, (which(chroms[i-split] * 2 == chroms) + split)] <- 6 #polyploidy-2
-      
       # demiploidy
       if((ceiling(chroms[i-split] * 1.5)) <= max(chroms)){
         x <- chroms[i-split] * 1.5
         if(x %% 1 == 0)  parMat[i, (which(chroms==x) + split)] <- 12 #demiploidy state1 even
         if(x %% 1 != 0)  parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <- 13 #demiploidy state 2 odd
       }
-      
-      
-      
       parMat[i, (i - split)] <- 9 #transition state 2->1
       # special case for last row
       if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 9 # transitions state 2->1
     }
   }
-  
-  
-  
-  
-  
-  
   # we now have a matrix with a number 1-9 that matches the rates present
   # under one of our models we will use this to build our 
   # arguments for the standard diversitree constrain function
@@ -195,9 +185,6 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
       }
     }
   }
-  
-  
-  
   # lets store these in realy obvious names
   formulae <- c(restricted, asc1, desc1, asc2, desc2, pol1, pol2, redip, tran12, tran21, dem1, dem2)
   extras <- c("restricted", "asc1", "desc1", "asc2", "desc2", 
