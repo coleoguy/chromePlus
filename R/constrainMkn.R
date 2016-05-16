@@ -9,8 +9,10 @@
 # rate7 rediploidization                    redip
 # rate8 rediploidization                    tran12
 # rate9 rediploidization                    tran21
-# rate10 demipolyploidy for state1            dem1
-# rate11 demipolyploidy for state2            dem2
+# rate10 demipolyploidy for state1            dem1 even
+# rate11 demipolyploidy for state1            dem2 odd
+# rate12 demipolyploidy for state2            dem1 even
+# rate13 demipolyploidy for state2            dem2 odd
 
 # can additional constraints can be added after this
 # function by using the normal constrain approach
@@ -51,6 +53,12 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy
       parMat[(i + 1), i] <- 2 #descending aneuploidy
       if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms==(chroms[i]*2))] <- 5 #polyploidy
+      if((ceiling(chroms[i] * 1.5)) <= max(chroms)){
+        x <- chroms[i] * 1.5
+        if(x %% 2 == 0)  parMat[i, which(chroms==x)] <- 10 #demiploidy state1 even
+        if(x %% 2 != 0)  parMat[i, c(floor(x), ceiling(x))] <- 11 #demiploidy state 1 odd
+      }
+        parMat[i, ]
     }
     # currently this has the issue of missing polyploidy for q12
     # this transition should be = ascending + polyploidy this should
@@ -154,6 +162,7 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
   extras <- c("restricted", "asc1", "desc1", "asc2", "desc2", 
               "pol1", "pol2", "redip", "tran12", "tran21")
   lik.con <- constrain(lik, formulae=formulae, extra=extras)
+  colnames(parMat) <- rownames(parMat) <- colnames(chrom.matrix)
   if(verbose==T) return(list(lik.con, parMat))
   if(verbose==F) return(lik.con)
 }
