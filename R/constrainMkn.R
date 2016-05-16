@@ -9,10 +9,10 @@
 # rate7 rediploidization                    redip
 # rate8 rediploidization                    tran12
 # rate9 rediploidization                    tran21
-# rate10 demipolyploidy for state1            dem1 even
-# rate11 demipolyploidy for state1            dem2 odd
-# rate12 demipolyploidy for state2            dem1 even
-# rate13 demipolyploidy for state2            dem2 odd
+# rate10 demipolyploidy for state1            dem1e even
+# rate11 demipolyploidy for state1            dem1o odd
+# rate12 demipolyploidy for state2            dem1e even
+# rate13 demipolyploidy for state2            dem1o odd
 
 # can additional constraints can be added after this
 # function by using the normal constrain approach
@@ -55,8 +55,8 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
       if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms==(chroms[i]*2))] <- 5 #polyploidy
       if((ceiling(chroms[i] * 1.5)) <= max(chroms)){
         x <- chroms[i] * 1.5
-        if(x %% 2 == 0)  parMat[i, which(chroms==x)] <- 10 #demiploidy state1 even
-        if(x %% 2 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- 11 #demiploidy state 1 odd
+        if(x %% 1 == 0)  parMat[i, which(chroms==x)] <- 10 #demiploidy state1 even
+        if(x %% 1 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- 11 #demiploidy state 1 odd
       }
     }
     # currently this has the issue of missing polyploidy for q12
@@ -118,7 +118,9 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
   #
   # each of these vectors will hold the formulae for that class of
   # parameters (described up at the top)
-  restricted <- asc1 <- desc1 <- asc2 <- desc2 <- pol1 <- pol2 <- redip <- tran12 <- tran21 <- vector()
+  restricted <- asc1 <- desc1 <- asc2 <- desc2 <- 
+                pol1 <- pol2 <- redip <- tran12 <- 
+                tran21 <- dem1 <- dem2 <- vector()
   for(i in 1:nrow(parMat)){ # by rows then
     for(j in 1:ncol(parMat)){ # by cols
       if(parMat[i, j] == 0 & i != j){
@@ -151,17 +153,23 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
       if(parMat[i, j] == 9){
         tran21 <- c(tran21, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ tran21", sep="" ))
       }
+      if(parMat[i, j] == 10){
+        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ dem1", sep="" ))
+      }
+      if(parMat[i, j] == 11){
+        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ .5*dem1", sep="" ))
+      }
     }
   }
   
   
   
   # lets store these in realy obvious names
-  formulae <- c(restricted, asc1, desc1, asc2, desc2, pol1, pol2, redip, tran12, tran21)
+  formulae <- c(restricted, asc1, desc1, asc2, desc2, pol1, pol2, redip, tran12, tran21, dem1, dem2)
   extras <- c("restricted", "asc1", "desc1", "asc2", "desc2", 
-              "pol1", "pol2", "redip", "tran12", "tran21")
+              "pol1", "pol2", "redip", "tran12", "tran21", "dem1", "dem2")
   lik.con <- constrain(lik, formulae=formulae, extra=extras)
-  colnames(parMat) <- rownames(parMat) <- colnames(chrom.matrix)
+  colnames(parMat) <- rownames(parMat) <- colnames(data)
   if(verbose==T) return(list(lik.con, parMat))
   if(verbose==F) return(lik.con)
 }
