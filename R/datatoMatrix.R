@@ -9,6 +9,13 @@
 # is created if F then basically you have the older style 
 # chromevol.
 datatoMatrix <- function(x, range, hyper = T){
+  if(!is.numeric(x[,2])) stop("chromosome number must be numeric")
+  if(!is.numeric(x[,3])) stop("probability of state on must be numeric")
+  if(max(x[,3])>1 | min(x[,3]<0)) stop("column three must be a probability betwen 0 and 1")
+  if(sum(x[,2] != round(x[,2])) > 0){
+    print("Chromosome numbers are being rounded to nearest whole number")
+    x[,2] <- round(x[,2])
+  }
   matsize <- range[2]-range[1]+1
   if(hyper == T){
     dmat <- matrix(0, nrow(x), matsize * 2)

@@ -191,7 +191,11 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, verbose=F){
               "pol1", "pol2", "redip", "tran12", "tran21", "dem1", "dem2")
   lik.con <- constrain(lik, formulae=formulae, extra=extras)
   colnames(parMat) <- rownames(parMat) <- colnames(data)
-  if(verbose==T) return(list(lik.con, parMat))
+  if(verbose==T){
+    result.list <- list(lik.con, parMat)
+    names(result.list) <- c("likelihood function", "parameter matrix")
+    return(result.list)
+  } 
   if(verbose==F) return(lik.con)
 }
 

@@ -20,12 +20,16 @@ tree <- trees(pars = c(.5, .1),
 # Simplify tree & rescale this tree to unit length
 tree <- tree[c(1, 3, 5, 2)]
 class(tree) <- "phylo"
-tree <- geiger::rescale(tree, model = "depth", 1)
+tree <- geiger::rescale(tree, "depth", 1)
 plot(tree)
-# Evolve chromosome dataset using our simChrom function
+# Evolve chromosome dataset using 
+# old chromevol model 2010
 set.seed(2)
-data <- simChrom(tree, pars=c(2, 1, 0, 10), limits=2:100)
+data <- simChrom(tree, pars=c(2, 1, 0.1, 0.1, 50), limits=c(2,100), model="2010")
 hist(data, breaks=range(data)[2]-range(data)[1]) 
+
+# Evolve chromosome dataset using 
+# chromRate model
 ###
 ###
 ###
