@@ -33,61 +33,47 @@ simChrom <- function(tree, pars, limits, model){
     root <- pars[11]
     if(length(pars) != 11) stop("pars should have length of 11")
     # set up an empty matrix
+    if(limits[2] < 100) pad <- 2
+    if(limits[2] >= 100) pad <- 3
+    if(limits[2] < 10) pad <- 1
+    
     parMat <- matrix(0, 2*length(limits[1]:limits[2]), 2*length(limits[1]:limits[2]))
     colnames(parMat) <- sprintf(paste('%0', pad, 'd', sep=""), 1:ncol(parMat))
     rownames(parMat) <- colnames(parMat)
-    # now we have a matrix with all zeros but the right state names
-    # in the column and row names
-    
-    # we need to know where our duplication 
-    # of the matrix begins so here is that
     split <- ncol(parMat)/2
-    
-    
-    
-    
-    q <- matrix(0, length(limits[1]:limits[2]), length(limits[1]:limits[2]))
-    rownames(q) <- colnames(q) <- chroms <- limits[1]:limits[2] 
-    
-    
-    
-    
-    # MODEL 2 PLOIDY IS NOT THE HYPER STATE
-    if(hidden==T & polyploidy == F){
-      print("Constraining model with a hyper state that may have different rates of chromsome number evolution")
       # state 1 rates
       for(i in 1:(split - 1)){
-        parMat[i, (i + 1)] <- 1 #ascending aneuploidy - 1
-        parMat[(i + 1), i] <- 2 #descending aneuploidy - 1
-        if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms==(chroms[i]*2))] <- 5 #polyploidy - 1
+        parMat[i, (i + 1)] <- pars[1] #ascending aneuploidy - 1
+        parMat[(i + 1), i] <- pars[3] #descending aneuploidy - 1
+        if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms==(chroms[i]*2))] <- parMat[i, which(chroms==(chroms[i]*2))] + pars[7] #polyploidy - 1
         # demiploidy
         if((ceiling(chroms[i] * 1.5)) <= max(chroms)){
           x <- chroms[i] * 1.5
-          if(x %% 1 == 0)  parMat[i, which(chroms==x)] <- 10 #demiploidy state1 even
-          if(x %% 1 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- 11 #demiploidy state 1 odd
+          if(x %% 1 == 0)  parMat[i, which(chroms==x)] <- parMat[i, which(chroms==x)] + pars[5] #demiploidy state1 even
+          if(x %% 1 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] + (pars[5]/2) #demiploidy state 1 odd
         }
-        parMat[i, (i+split)] <- 8 # transitions state 1->2
+        parMat[i, (i+split)] <- pars[9] # transitions state 1->2
         # special case for last row
-        if(i == (split - 1)) parMat[(i + 1), (i + 1 + split)] <- 8 # transitions state 2->1
+        if(i == (split - 1)) parMat[(i + 1), (i + 1 + split)] <- pars[9] # transitions state 1->2
         
       }
       # state 2 rates
       for(i in (split + 1):(nrow(parMat) - 1)){
-        parMat[i, (i + 1)] <- 3 #ascending aneuploidy - 2
-        parMat[(i + 1), i] <- 4 #descending aneuploidy - 2
-        if((chroms[i-split] * 2) <= max(chroms)) parMat[i, (which(chroms[i-split] * 2 == chroms) + split)] <- 6 #polyploidy-2
+        parMat[i, (i + 1)] <- pars[2] #ascending aneuploidy - 2
+        parMat[(i + 1), i] <- pars[4] #descending aneuploidy - 2
+        if((chroms[i-split] * 2) <= max(chroms)) parMat[i, (which(chroms[i-split] * 2 == chroms) + split)] <- parMat[i, (which(chroms[i-split] * 2 == chroms) + split)] + pars[8] #polyploidy-2
         # demiploidy
         if((ceiling(chroms[i-split] * 1.5)) <= max(chroms)){
           x <- chroms[i-split] * 1.5
-          if(x %% 1 == 0)  parMat[i, (which(chroms==x) + split)] <- 12 #demiploidy state1 even
-          if(x %% 1 != 0)  parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <- 13 #demiploidy state 2 odd
+          if(x %% 1 == 0)  parMat[i, (which(chroms==x) + split)] <- parMat[i, (which(chroms==x) + split)] + pars[6] #demiploidy state1 even
+          if(x %% 1 != 0)  parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <- parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] + (pars[6]/2) #demiploidy state 2 odd
         }
-        parMat[i, (i - split)] <- 9 #transition state 2->1
+        parMat[i, (i - split)] <- pars[10] #transition state 2->1
         # special case for last row
-        if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 9 # transitions state 2->1
+        if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- pars[10] # transitions state 2->1
       }
+    q <- parMat
     }
-  }
 
   
   
