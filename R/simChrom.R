@@ -41,6 +41,7 @@ simChrom <- function(tree, pars, limits, model){
     colnames(parMat) <- sprintf(paste('%0', pad, 'd', sep=""), 1:ncol(parMat))
     rownames(parMat) <- colnames(parMat)
     split <- ncol(parMat)/2
+    chroms <- limits[1]:limits[2]
       # state 1 rates
       for(i in 1:(split - 1)){
         parMat[i, (i + 1)] <- pars[1] #ascending aneuploidy - 1
@@ -79,10 +80,29 @@ simChrom <- function(tree, pars, limits, model){
   
     diag(q) <- -rowSums(q)
     # simulate the chromosome numbers
-    # return polyploidy state
     dsims <- geiger::sim.char(tree, q, model="discrete", root=root)[,,1]
+    # save the names for various uses below
     tips <- names(dsims)
-    dsims <- as.numeric(colnames(q)[dsims])
-    names(dsims) <- tips
-    return(dsims)
+    # in the case of the 2010 model we have column names = to the
+    # chromosome numbers so we can just use them
+    if(model == "2010"){
+      dsims[] <- as.numeric(colnames(q)[dsims])
+      return(dsims)
+    } 
+
+    # under the chromRate model things are bit more complex and have
+    # to be converted back to chromosome number and binary state
+    if(model == "chromRate"){
+      # for chromRate we need to return two vectors
+      # 1) binary state 
+      b.state <- rep(0, length(dsims))
+      names(b.state) <- tips
+      # if we are in binary state 1 add that in
+      b.state[dsims > ncol(q) / 2] <- 1
+      
+      # 2) chromosome number
+      dsims[] <- c(chroms, chroms)[dsims]
+      result <- list(b.state, dsims)
+      return(result)
+    } 
 }
