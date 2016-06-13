@@ -1,3 +1,6 @@
+## TODO FIX third column checks so ignored when 
+## hyper = F
+
 # this makes the data matrix for chromevol analysis
 # x: is a dataframe col 1 is names col 2 is chromosome
 # counts column 3 is probability in metastate 1.
@@ -10,8 +13,10 @@
 # chromevol.
 datatoMatrix <- function(x, range, hyper = T){
   if(!is.numeric(x[,2])) stop("chromosome number must be numeric")
-  if(!is.numeric(x[,3])) stop("probability of state on must be numeric")
-  if(max(x[,3])>1 | min(x[,3]<0)) stop("column three must be a probability betwen 0 and 1")
+  if(hyper==F){
+    if(!is.numeric(x[,3])) stop("probability of state on must be numeric")
+    if(max(x[,3])>1 | min(x[,3]<0)) stop("column three must be a probability betwen 0 and 1")
+  }
   if(sum(x[,2] != round(x[,2])) > 0){
     print("Chromosome numbers are being rounded to nearest whole number")
     x[,2] <- round(x[,2])
