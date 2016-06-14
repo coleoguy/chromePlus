@@ -1,3 +1,10 @@
+## TODO finish filling out the constrain argument
+## I want it to be a list that could have the following elements
+
+## drop.poly=T: polyoploidy is dropped from model
+## drop.demi=T: demiploidy is dropped from model
+## singlerate=T: gain and loss rate are equal
+## meta="ARD": assumes q01 and q10 are different if "SYM" then single rate
 
 # rates that are implemented include
 # rate1 ascending aneuploidy - diploid      asc1
@@ -17,7 +24,9 @@
 # can additional constraints can be added after this
 # function by using the normal constrain approach
 
-constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T, polyploidy = T, verbose=F){
+constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T, 
+                           polyploidy = T, verbose=F, 
+                           constrain=list(drop.poly=F, drop.demi=F, singlerate=F, meta="ARD")){
   
   ## BUILD AN EMPTY MATRIX MATCHING OUR MODEL
   # create and store variable for padding rate names
@@ -136,7 +145,7 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T, polypl
   
   
   
-  # we now have a matrix with a number 1-9 that matches the rates present
+  # we now have a matrix with a number 1-XXX that matches the rates present
   # under one of our models we will use this to build our 
   # arguments for the standard diversitree constrain function
   #
@@ -150,44 +159,84 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T, polypl
       if(parMat[i, j] == 0 & i != j){
         restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
       }
+      
       if(parMat[i, j] == 1){
         asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
       }
-      if(parMat[i, j] == 2){
+      if(parMat[i, j] == 2 & constrain$singlerate == F){
         desc1 <- c(desc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc1", sep="" ))
       }
+      if(parMat[i, j] == 2 & constrain$singlerate == T){
+        asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
+      }
+      
       if(parMat[i, j] == 3){
         asc2 <- c(asc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc2", sep="" ))
       }
-      if(parMat[i, j] == 4){
+
+      if(parMat[i, j] == 4 & constrain$singlerate==F){
         desc2 <- c(desc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc2", sep="" ))
       }
-      if(parMat[i, j] == 5){
+      if(parMat[i, j] == 4 & constrain$singlerate==T){
+        asc2 <- c(asc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc2", sep="" ))
+      }
+      
+      
+      if(parMat[i, j] == 5 & constrain$drop.poly==F){
         pol1 <- c(pol1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ pol1", sep="" ))
       }
-      if(parMat[i, j] == 6){
+      if(parMat[i, j] == 5 & constrain$drop.poly==T){
+        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
+      }
+      
+      
+      if(parMat[i, j] == 6 & constrain$drop.poly==F){
         pol2 <- c(pol2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ pol2", sep="" ))
       }
+      if(parMat[i, j] == 6 & constrain$drop.poly==T){
+        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
+      }
+
+      
       if(parMat[i, j] == 7){
         redip <- c(redip, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ redip", sep="" ))
       }
       if(parMat[i, j] == 8){
         tran12 <- c(tran12, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ tran12", sep=""))
       }
-      if(parMat[i, j] == 9){
+      if(parMat[i, j] == 9 & constrain$meta=="ARD"){
         tran21 <- c(tran21, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ tran21", sep="" ))
       }
-      if(parMat[i, j] == 10){
+      if(parMat[i, j] == 9 & constrain$meta=="SYM"){
+        tran12 <- c(tran12, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ tran12", sep="" ))
+      }
+      
+      if(parMat[i, j] == 10 & constrain$drop.demi==F){
         dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ dem1", sep="" ))
       }
-      if(parMat[i, j] == 11){
+      if(parMat[i, j] == 10 & constrain$drop.demi==T){
+        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
+      }
+      
+      if(parMat[i, j] == 11 & constrain$drop.demi==F){
         dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ .5*dem1", sep="" ))
       }
-      if(parMat[i, j] == 12){
+      if(parMat[i, j] == 11 & constrain$drop.demi==T){
+        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
+      }
+      
+      if(parMat[i, j] == 12 & constrain$drop.demi==F){
         dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ dem2", sep="" ))
       }
-      if(parMat[i, j] == 13){
+      if(parMat[i, j] == 12 & constrain$drop.demi==T){
+        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
+      }
+      
+      if(parMat[i, j] == 13 & constrain$drop.demi==F){
         dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ .5*dem2", sep="" ))
+      }
+      if(parMat[i, j] == 13 & constrain$drop.demi==T){
+        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
       }
     }
   }
