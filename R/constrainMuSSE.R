@@ -3,7 +3,8 @@
 
 ## drop.poly=T: polyoploidy is dropped from model
 ## drop.demi=T: demiploidy is dropped from model
-## singlerate=T: gain and loss rate are equal
+## singlerate=T: gain and loss rate are equal for each meta state
+## nometa=T: gain1 and gain2 are equal and loss1 and loss2 are equal
 ## meta="ARD": assumes q01 and q10 are different if "SYM" then single rate
 
 # rates that are implemented include
@@ -26,7 +27,17 @@
 
 constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T, 
                            polyploidy = T, verbose=F, 
-                           constrain=list(drop.poly=F, drop.demi=F, singlerate=F, meta="ARD")){
+                           constrain=list(drop.poly=F, drop.demi=F, 
+                                          singlerate=F, nometa=F, meta="ARD")){
+  if(length(constrain) < 5){
+    if(is.null(constrain$drop.pol)) constrain$drop.poly=F
+    if(is.null(constrain$drop.demi)) constrain$drop.poly=F
+    if(is.null(constrain$singlerate)) constrain$singlerate=F
+    if(is.null(constrain$nometa)) constrain$nometa=F
+    if(is.null(constrain$meta)) constrain$meta="ARD"
+  }
+
+    
   
   ## BUILD AN EMPTY MATRIX MATCHING OUR MODEL
   # create and store variable for padding rate names
@@ -160,28 +171,71 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
         restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
       }
       
+      # we always have at least this one par
       if(parMat[i, j] == 1){
         asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
       }
-      if(parMat[i, j] == 2 & constrain$singlerate == F){
-        desc1 <- c(desc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc1", sep="" ))
-      }
-      if(parMat[i, j] == 2 & constrain$singlerate == T){
-        asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
+      
+      
+      
+
+
+      # now lets do the most restrictive were all other rates are constrained to this
+      if(constrain$singlerate==T & constrain$nometa==T){
+        if(parMat[i, j] == 2){
+          asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
+        }
+        if(parMat[i, j] == 3){
+          asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
+        }
+        if(parMat[i, j] == 4){
+          asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
+        }
       }
       
-      if(parMat[i, j] == 3){
-        asc2 <- c(asc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc2", sep="" ))
+      # now lets do the one where gain and loss are diff but the same across metastates
+      if(constrain$singlerate==F & constrain$nometa==T){
+        if(parMat[i, j] == 2){
+          desc1 <- c(desc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc1", sep="" ))
+        }
+        if(parMat[i, j] == 3){
+          asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
+        }
+        if(parMat[i, j] == 4){
+          desc1 <- c(desc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc1", sep="" ))
+        }
+      }
+      
+      # now lets do the one where gain and loss are same but diff across metastates
+      if(constrain$singlerate==T & constrain$nometa==F){
+        if(parMat[i, j] == 2){
+          asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
+        }
+        if(parMat[i, j] == 3){
+          asc2 <- c(asc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc2", sep="" ))
+        }
+        if(parMat[i, j] == 4){
+          asc2 <- c(asc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc2", sep="" ))
+        }
+      }
+      
+      
+      
+      ## singlerate=T: gain and loss rate are equal for each meta state
+      ## nometa=T: gain1 and gain2 are equal and loss1 and loss2 are equal
+      
+      if(constrain$singlerate == F & constrain$nometa==F){
+        if(parMat[i, j] == 2){
+          desc1 <- c(desc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc1", sep="" ))
+        }
+        if(parMat[i, j] == 3){
+          asc2 <- c(asc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc2", sep="" ))
+        }
+        if(parMat[i, j] == 4){
+          desc2 <- c(desc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc2", sep="" ))
+        }
       }
 
-      if(parMat[i, j] == 4 & constrain$singlerate==F){
-        desc2 <- c(desc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc2", sep="" ))
-      }
-      if(parMat[i, j] == 4 & constrain$singlerate==T){
-        asc2 <- c(asc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc2", sep="" ))
-      }
-      
-      
       if(parMat[i, j] == 5 & constrain$drop.poly==F){
         pol1 <- c(pol1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ pol1", sep="" ))
       }
