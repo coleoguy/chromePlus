@@ -1,12 +1,12 @@
+# This code tests out a few of the functions in chromevolR
+# it also illustrates the current problem of unknown states
+# under the mkn framework as it currently is implemented.
+
 library(devtools)
 install_github('coleoguy/chromevolR')
 library(chromevolR)
 library(geiger)
 library(diversitree)
-
-# Rich says that in MKN the ode method may be best choice when the nubmer of 
-# states is very large...
-# add this to make.mkn below somewhere: control=list(method="ode")
 
 ########################
 #### Data simulation section
@@ -47,17 +47,27 @@ data("chrom")
 range <- c(min(chrom)-2,max(chrom)+2)
 
 # convert chromosome number to format for diversitree
-d.data <- cbind(names(chrom), chrom)
+d.data <- data.frame(names(chrom), chrom)
 p.mat <- datatoMatrix(x=d.data, range=range, hyper=F)
 
 # convert chromosome number to format for diversitree with hyperstate
-d.data <- cbind(names(chrom), chrom)
+d.data <- data.frame(names(chrom), chrom)
+hp.mat <- datatoMatrix(x=d.data, range=range, hyper=T)
+# fails as expected when no 3rd state info given 
+
+# lets supply a vector of probabilities
+d.data <- data.frame(names(chrom), chrom, runif(100, min=0, max=1))
 hp.mat <- datatoMatrix(x=d.data, range=range, hyper=T)
 
 # Now we make the full mkn likelihood function (w/o hyper state)
-lik <- make.mkn(tree, states=p.mat, k=ncol(p.mat), strict=F)
+lik <- make.mkn(tree, states=p.mat, k=ncol(p.mat), strict=F, control=list(method="ode"))
+
 # Constrain to chromevol (w/o hyperstate)
-lik.con <- constrainMkn(p.mat, lik, model="single")
+lik.con <- constrainMkn(p.mat, lik)
+
+# check to make sure function is valid
+lik.con(rep(.1, 7))
+
 # find MLE
 foo <- find.mle(lik.con, x.init = startVals(length(argnames(lik.con)), 0, 1))
 
