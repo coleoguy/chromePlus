@@ -9,5 +9,6 @@ Description: Implements models of chromosome evolution similar to chromevol usin
 License: GPL (>= 2)
 URL: https://github.com/coleoguy/chromevolR
 Imports: diversitree, geiger
-Suggests: knitr
+Suggests: knitr,
+    rmarkdown
 VignetteBuilder: knitr

@@ -31,6 +31,9 @@ If model="2010" the pars vector should be length 5: rates of chromosome gain, ch
 
 If model="chromRate" then the numeric vector supplied to pars should be length 11: chromosome gain in hyperstate 1 and hyperstate 2, chromosome loss in hyperstate 1 and hyperstate 2, demiploidy in hyperstate 1 and hyperstate 2, polyploidy in hyperstate 1 and hyperstate 2, transition from hyperstate 1 to 2, transition from hyperstate 2 to 1, and the chromosome number at the root of the tree.  
 
+
+**ploidevol model not yet coded up**
+
 If model="ploidEvol" then the numeric vector supplied to pars should be length 10: chromosome gain in diploids and polyploids, chromosome loss in diploids and polyploids, demiploidy in diploids and polyploids, polyploidy in diploids and polyploids, rediploidization, and the chromosome number at the root of the tree. 
 }
 \value{

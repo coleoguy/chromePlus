@@ -22,25 +22,21 @@
 # rate12 demipolyploidy for state2            dem2 even
 # rate13 demipolyploidy for state2            dem2 odd
 
-# can additional constraints can be added after this
-# function by using the normal constrain approach
-
 constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T, 
                            polyploidy = T, verbose=F, 
                            constrain=list(drop.poly=F, drop.demi=F, 
                                           singlerate=F, nometa=F, meta="ARD")){
+  # This fills out the list of constraints the default are no constraints
   if(length(constrain) < 5){
     if(is.null(constrain$drop.pol)) constrain$drop.poly=F
-    if(is.null(constrain$drop.demi)) constrain$drop.poly=F
+    if(is.null(constrain$drop.demi)) constrain$drop.demi=F
     if(is.null(constrain$singlerate)) constrain$singlerate=F
     if(is.null(constrain$nometa)) constrain$nometa=F
     if(is.null(constrain$meta)) constrain$meta="ARD"
   }
 
-    
-  
   ## BUILD AN EMPTY MATRIX MATCHING OUR MODEL
-  # create and store variable for padding rate names
+  # padding rate names
   if(ncol(data) < 100) pad <- 2
   if(ncol(data) >= 100) pad <- 3
   if(ncol(data) < 10) pad <- 1
@@ -50,19 +46,17 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
   # names this will allow for easy creation of constraints later
   colnames(parMat) <- sprintf(paste('%0', pad, 'd', sep=""), 1:ncol(parMat))
   rownames(parMat) <- colnames(parMat)
-  # now we have a matrix with all zeros but the right state names
-  # in the column and row names
-  
-  # we need to know where our duplication 
-  # of the matrix begins so here is that
+
+  # we need to know where our duplication of the matrix begins so here is that
   split <- ncol(parMat)/2
+  
   ## TODO CHANGE HIDDEN TO HYPER
   # we also need the actual chromosome numbers
   if(hidden==T) chroms <- as.numeric(colnames(data)[1:split])
   if(hidden==F) chroms <- as.numeric(colnames(data))
   
-  ## NOW WE HAVE A SERIES OF LOOPS THAT FILL IN OUR parMAT 
-  ## MATRIX WITH NUMBERS 1:9 INDICATIVE OF THE DIFFERENT POSSIBLE
+  ## NOW WE HAVE A SERIES OF LOOPS THAT FILL IN OUR parMat
+  ## MATRIX WITH NUMBERS 1:13 INDICATIVE OF THE DIFFERENT POSSIBLE
   ## RATES WE WISH TO INCLUDE IN OUR MODEL.  EACH OF THESE LOOPS
   ## REPRESENT A DIFFERENT MODEL OF CHROMOSOME EVOLUTION
   
@@ -83,7 +77,7 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
     # this transition should be = ascending + polyploidy this should
   }
   
-  # MODEL 1 PLOIDY IS HIDDEN STATE
+  # BiSCE MODEL 1 PLOIDY IS HIDDEN STATE
   if(hidden==T & polyploidy == T){
     print("Constraining model where ploidy is a meta state and different rates of chromosome evolution are possible based on being polyploid or diploid")
     # diploid rates
@@ -115,7 +109,7 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
     }
   }
   
-  # MODEL 2 PLOIDY IS NOT THE HYPER STATE
+  # BiSPCE 2 PLOIDY IS NOT THE HYPER STATE
   if(hidden==T & polyploidy == F){
     print("Constraining model with a hyper state that may have different rates of chromsome number evolution")
     # state 1 rates
@@ -150,16 +144,11 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
       if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 9 # transitions state 2->1
     }
   }
-  
-  
-  
-  
-  
-  
+
   # we now have a matrix with a number 1-XXX that matches the rates present
   # under one of our models we will use this to build our 
   # arguments for the standard diversitree constrain function
-  #
+
   # each of these vectors will hold the formulae for that class of
   # parameters (described up at the top)
   restricted <- asc1 <- desc1 <- asc2 <- desc2 <- 
@@ -167,20 +156,21 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
                 tran21 <- dem1 <- dem2 <- lambda <- mu <- vector()
   for(i in 1:nrow(parMat)){ # by rows then
     for(j in 1:ncol(parMat)){ # by cols
+      # RESTRICTED TRANSITIONS
       if(parMat[i, j] == 0 & i != j){
         restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
       }
-      
-      # we always have at least this one par
+      ##
+      ## drop.poly=T: sets polyploidy rate to 0
+      ## drop.demi=T: set demiploidy rate to 0
+      ## singlerate=T: gain and loss rate are equal for each meta state
+      ## nometa=T: gain1 & 2, loss1 & 2, poly1 & 2, demi1 & 2 are equal
+      ## meta=: "ARD" q12 is different from q21; "SYM" q12 and q21 are equal
+      ##
+      # ANEUPLOIDY
       if(parMat[i, j] == 1){
         asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
       }
-      
-      
-      
-
-
-      # now lets do the most restrictive were all other rates are constrained to this
       if(constrain$singlerate==T & constrain$nometa==T){
         if(parMat[i, j] == 2){
           asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
@@ -192,21 +182,6 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
           asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
         }
       }
-      
-      # now lets do the one where gain and loss are diff but the same across metastates
-      if(constrain$singlerate==F & constrain$nometa==T){
-        if(parMat[i, j] == 2){
-          desc1 <- c(desc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc1", sep="" ))
-        }
-        if(parMat[i, j] == 3){
-          asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
-        }
-        if(parMat[i, j] == 4){
-          desc1 <- c(desc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc1", sep="" ))
-        }
-      }
-      
-      # now lets do the one where gain and loss are same but diff across metastates
       if(constrain$singlerate==T & constrain$nometa==F){
         if(parMat[i, j] == 2){
           asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
@@ -218,12 +193,17 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
           asc2 <- c(asc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc2", sep="" ))
         }
       }
-      
-      
-      
-      ## singlerate=T: gain and loss rate are equal for each meta state
-      ## nometa=T: gain1 and gain2 are equal and loss1 and loss2 are equal
-      
+      if(constrain$singlerate==F & constrain$nometa==T){
+        if(parMat[i, j] == 2){
+          desc1 <- c(desc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc1", sep="" ))
+        }
+        if(parMat[i, j] == 3){
+          asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
+        }
+        if(parMat[i, j] == 4){
+          desc1 <- c(desc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc1", sep="" ))
+        }
+      }
       if(constrain$singlerate == F & constrain$nometa==F){
         if(parMat[i, j] == 2){
           desc1 <- c(desc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc1", sep="" ))
@@ -235,23 +215,54 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
           desc2 <- c(desc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc2", sep="" ))
         }
       }
-
+      # DEMIPLOIDY
+      if(parMat[i, j] == 10 & constrain$drop.demi==F){
+        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ dem1", sep="" ))
+      }
+      if(parMat[i, j] == 11 & constrain$drop.demi==F){
+        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ .5*dem1", sep="" ))
+      }
+      if(parMat[i, j] == 12 & constrain$drop.demi==F & constrain$nometa==F){
+        dem2 <- c(dem2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ dem2", sep="" ))
+      }
+      if(parMat[i, j] == 13 & constrain$drop.demi==F & constrain$nometa==F){
+        dem2 <- c(dem2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ .5*dem2", sep="" ))
+      }
+      if(parMat[i, j] == 12 & constrain$drop.demi==F & constrain$nometa==T){
+        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ dem1", sep="" ))
+      }
+      if(parMat[i, j] == 13 & constrain$drop.demi==F & constrain$nometa==T){
+        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ .5*dem1", sep="" ))
+      }
+      if(parMat[i, j] == 10 & constrain$drop.demi==T){
+        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
+      }
+      if(parMat[i, j] == 11 & constrain$drop.demi==T){
+        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
+      }
+      if(parMat[i, j] == 12 & constrain$drop.demi==T){
+        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
+      }
+      if(parMat[i, j] == 13 & constrain$drop.demi==T){
+        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
+      }
+      # POLYPLOIDY
       if(parMat[i, j] == 5 & constrain$drop.poly==F){
+        pol1 <- c(pol1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ pol1", sep="" ))
+      }
+      if(parMat[i, j] == 6 & constrain$drop.poly==F & constrain$nometa==F){
+        pol2 <- c(pol2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ pol2", sep="" ))
+      }
+      if(parMat[i, j] == 6 & constrain$drop.poly==F & constrain$nometa==T){
         pol1 <- c(pol1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ pol1", sep="" ))
       }
       if(parMat[i, j] == 5 & constrain$drop.poly==T){
         restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
       }
-      
-      
-      if(parMat[i, j] == 6 & constrain$drop.poly==F){
-        pol2 <- c(pol2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ pol2", sep="" ))
-      }
       if(parMat[i, j] == 6 & constrain$drop.poly==T){
         restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
       }
-
-      
+      # BINARY CHARACTER
       if(parMat[i, j] == 7){
         redip <- c(redip, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ redip", sep="" ))
       }
@@ -265,41 +276,9 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
         tran12 <- c(tran12, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ tran12", sep="" ))
       }
       
-      if(parMat[i, j] == 10 & constrain$drop.demi==F){
-        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ dem1", sep="" ))
-      }
-      if(parMat[i, j] == 10 & constrain$drop.demi==T){
-        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
-      }
-      
-      if(parMat[i, j] == 11 & constrain$drop.demi==F){
-        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ .5*dem1", sep="" ))
-      }
-      if(parMat[i, j] == 11 & constrain$drop.demi==T){
-        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
-      }
-      
-      if(parMat[i, j] == 12 & constrain$drop.demi==F){
-        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ dem2", sep="" ))
-      }
-      if(parMat[i, j] == 12 & constrain$drop.demi==T){
-        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
-      }
-      
-      if(parMat[i, j] == 13 & constrain$drop.demi==F){
-        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ .5*dem2", sep="" ))
-      }
-      if(parMat[i, j] == 13 & constrain$drop.demi==T){
-        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
-      }
     }
   }
-  
-  # since we are using musse now we have to build in the 
-  # speciation and extinction parameters.  It seems that 
-  # the only sensible way to deal with these is to either
-  # have a single rate for everyone or two have seperate 
-  # rates for diploids and polyploids.
+  # Lambda and Mu
   for(i in 1:nrow(parMat)){
     # no hidden state
     if(hidden==F){
@@ -333,12 +312,11 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
       }
     }
   }
-  
   # lets store these in realy obvious names
   formulae <- c(restricted, asc1, desc1, asc2, desc2, pol1, pol2, 
-                redip, tran12, tran21, dem1, dem2, lambda, mu)
+                dem1, dem2, redip, tran12, tran21, lambda, mu)
   extras <- c("restricted", "asc1", "desc1", "asc2", "desc2", 
-              "pol1", "pol2", "redip", "tran12", "tran21", "dem1", "dem2",
+              "pol1", "pol2", "dem1", "dem2", "redip", "tran12", "tran21", 
               "lambda1", "mu1", "lambda2", "mu2")
   lik.con <- constrain(lik, formulae=formulae, extra=extras)
   colnames(parMat) <- rownames(parMat) <- colnames(data)
