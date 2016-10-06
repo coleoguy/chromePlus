@@ -75,7 +75,7 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, equal.rates = F,
   
   # MODEL 1 PLOIDY IS HIDDEN STATE
   if(hyper==T & polyploidy == T){
-    print("Constraining model where ploidy is a meta state and different rates of chromosome evolution are possible based on being polyploid or diploid")
+    print("Creating rate matrix for chosen chromosome model")
     # diploid rates
     for(i in 1:(split - 1)){
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy - diploids
@@ -107,7 +107,7 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, equal.rates = F,
   
   # MODEL 2 PLOIDY IS NOT THE HYPER STATE
   if(hyper==T & polyploidy == F){
-    print("Constraining model with a hyper state that may have different rates of chromsome number evolution")
+    print("Creating rate matrix for chosen chromosome model")
     # state 1 rates
     for(i in 1:(split - 1)){
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy - 1
@@ -155,6 +155,8 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, equal.rates = F,
                 tran21 <- dem1 <- dem2 <- vector()
   
   # now we start building up our constrain formula
+  print("Creating constaint formulae for diversitree")
+  
   for(i in 1:nrow(parMat)){ # by rows then
     for(j in 1:ncol(parMat)){ # by cols
       # RESTRICTED
