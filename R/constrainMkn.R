@@ -50,8 +50,8 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, equal.rates = F,
   split <- ncol(parMat)/2
   
   # we also need the actual chromosome numbers
-  if(hyper==T) chroms <- as.numeric(colnames(data)[1:split])
-  if(hyper==F) chroms <- as.numeric(colnames(data))
+  if(hyper == T) chroms <- as.numeric(colnames(data)[1:split])
+  if(hyper == F) chroms <- as.numeric(colnames(data))
   
   ## NOW WE HAVE A SERIES OF LOOPS THAT FILL IN OUR parMAT 
   ## MATRIX WITH NUMBERS 1:9 INDICATIVE OF THE DIFFERENT POSSIBLE
@@ -59,15 +59,15 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, equal.rates = F,
   ## REPRESENT A DIFFERENT MODEL OF CHROMOSOME EVOLUTION
   
   ## OLD CRHOMEVOL MODEL
-  if(hyper==F){
+  if(hyper == F){
     print("Constraining model to simple chromevol version")
     for(i in 1:(nrow(parMat) - 1)){
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy
       parMat[(i + 1), i] <- 2 #descending aneuploidy
-      if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms==(chroms[i]*2))] <- 5 #polyploidy
+      if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms == (chroms[i] * 2))] <- 5 #polyploidy
       if((ceiling(chroms[i] * 1.5)) <= max(chroms)){
         x <- chroms[i] * 1.5
-        if(x %% 1 == 0)  parMat[i, which(chroms==x)] <- 10 #demiploidy state1 even
+        if(x %% 1 == 0)  parMat[i, which(chroms == x)] <- 10 #demiploidy state1 even
         if(x %% 1 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- 11 #demiploidy state 1 odd
       }
     }
@@ -141,142 +141,43 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, equal.rates = F,
     }
   }
   
+  rate.table <- as.data.frame(matrix(,nrow(parMat) * ncol(parMat), 3))
+  rate.table[, 1] <- rep(as.character(row.names(parMat)), each=ncol(parMat))
+  rate.table[, 2] <- rep(as.character(colnames(parMat)), nrow(parMat))
+  rate.table[, 3] <- as.character(c(t(parMat)))
+  rate.table <- rate.table[rate.table[, 1] != rate.table[2], ]
   
-  # we now have a matrix with a number 1-9 that matches the rates present
-  # under one of our models we will use this to build our 
-  # arguments for the standard diversitree constrain function
-  #
-  #
-  #
-  # each of these vectors will hold the formulae for that class of
-  # parameters (described up at the top)
-  restricted <- asc1 <- desc1 <- asc2 <- desc2 <- 
-                pol1 <- pol2 <- redip <- tran12 <- 
-                tran21 <- dem1 <- dem2 <- vector()
+  rate.table[rate.table[, 3] == 1, 3] <- "asc1"
+  rate.table[rate.table[, 3] == 2, 3] <- "desc1"
+  rate.table[rate.table[, 3] == 3, 3] <- "asc2"
+  rate.table[rate.table[, 3] == 4, 3] <- "desc2"
+  rate.table[rate.table[, 3] == 5, 3] <- "pol1"
+  rate.table[rate.table[, 3] == 6, 3] <- "pol2"
+  rate.table[rate.table[, 3] == 7, 3] <- "redip"
+  rate.table[rate.table[, 3] == 8, 3] <- "tran12"
+  rate.table[rate.table[, 3] == 9, 3] <- "tran21"
+  rate.table[rate.table[, 3] == 10, 3] <- "dem1"
+  rate.table[rate.table[, 3] == 11, 3] <- ".5*dem1"
+  rate.table[rate.table[, 3] == 12, 3] <- "dem2"
+  rate.table[rate.table[, 3] == 13, 3] <- ".5*dem2"
   
-  # now we start building up our constrain formula
-  print("Creating constaint formulae for diversitree")
-  
-  for(i in 1:nrow(parMat)){ # by rows then
-    for(j in 1:ncol(parMat)){ # by cols
-      # RESTRICTED
-      if(parMat[i, j] == 0 & i != j){
-        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
-      }
-      # ANEUPLOIDY
-      if(parMat[i, j] == 1){
-        asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
-      }
-      if(constrain$singlerate==T & constrain$nometa==T){
-        if(parMat[i, j] == 2){
-          asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
-        }
-        if(parMat[i, j] == 3){
-          asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
-        }
-        if(parMat[i, j] == 4){
-          asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
-        }
-      }
-      if(constrain$singlerate==T & constrain$nometa==F){
-        if(parMat[i, j] == 2){
-          asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
-        }
-        if(parMat[i, j] == 3){
-          asc2 <- c(asc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc2", sep="" ))
-        }
-        if(parMat[i, j] == 4){
-          asc2 <- c(asc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc2", sep="" ))
-        }
-      }
-      if(constrain$singlerate==F & constrain$nometa==T){
-        if(parMat[i, j] == 2){
-          desc1 <- c(desc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc1", sep="" ))
-        }
-        if(parMat[i, j] == 3){
-          asc1 <- c(asc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc1", sep="" ))
-        }
-        if(parMat[i, j] == 4){
-          desc1 <- c(desc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc1", sep="" ))
-        }
-      }
-      if(constrain$singlerate == F & constrain$nometa==F){
-        if(parMat[i, j] == 2){
-          desc1 <- c(desc1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc1", sep="" ))
-        }
-        if(parMat[i, j] == 3){
-          asc2 <- c(asc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ asc2", sep="" ))
-        }
-        if(parMat[i, j] == 4){
-          desc2 <- c(desc2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ desc2", sep="" ))
-        }
-      }
-      # DEMIPLOIDY
-      if(parMat[i, j] == 10 & constrain$drop.demi==F){
-        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ dem1", sep="" ))
-      }
-      if(parMat[i, j] == 11 & constrain$drop.demi==F){
-        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ .5*dem1", sep="" ))
-      }
-      if(parMat[i, j] == 12 & constrain$drop.demi==F & constrain$nometa==F){
-        dem2 <- c(dem2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ dem2", sep="" ))
-      }
-      if(parMat[i, j] == 13 & constrain$drop.demi==F & constrain$nometa==F){
-        dem2 <- c(dem2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ .5*dem2", sep="" ))
-      }
-      if(parMat[i, j] == 12 & constrain$drop.demi==F & constrain$nometa==T){
-        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ dem1", sep="" ))
-      }
-      if(parMat[i, j] == 13 & constrain$drop.demi==F & constrain$nometa==T){
-        dem1 <- c(dem1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ .5*dem1", sep="" ))
-      }
-      if(parMat[i, j] == 10 & constrain$drop.demi==T){
-        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
-      }
-      if(parMat[i, j] == 11 & constrain$drop.demi==T){
-        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
-      }
-      if(parMat[i, j] == 12 & constrain$drop.demi==T){
-        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
-      }
-      if(parMat[i, j] == 13 & constrain$drop.demi==T){
-        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
-      }
-      # POLYPLOIDY
-      if(parMat[i, j] == 5 & constrain$drop.poly==F){
-        pol1 <- c(pol1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ pol1", sep="" ))
-      }
-      if(parMat[i, j] == 6 & constrain$drop.poly==F & constrain$nometa==F){
-        pol2 <- c(pol2, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ pol2", sep="" ))
-      }
-      if(parMat[i, j] == 6 & constrain$drop.poly==F & constrain$nometa==T){
-        pol1 <- c(pol1, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ pol1", sep="" ))
-      }
-      if(parMat[i, j] == 5 & constrain$drop.poly==T){
-        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
-      }
-      if(parMat[i, j] == 6 & constrain$drop.poly==T){
-        restricted <- c(restricted, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ 0", sep="" ))
-      }
-      # BINARY CHARACTER
-      if(parMat[i, j] == 7){
-        redip <- c(redip, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ redip", sep="" ))
-      }
-      if(parMat[i, j] == 8){
-        tran12 <- c(tran12, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ tran12", sep=""))
-      }
-      if(parMat[i, j] == 9 & constrain$meta=="ARD"){
-        tran21 <- c(tran21, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ tran21", sep="" ))
-      }
-      if(parMat[i, j] == 9 & constrain$meta=="SYM"){
-        tran12 <- c(tran12, paste("q", row.names(parMat)[i], colnames(parMat)[j], " ~ tran12", sep="" ))
-      }
-    }
+  formulae <- vector(mode="character", length=nrow(rate.table))
+  for(i in 1:nrow(rate.table)){
+    formulae[i] <- paste("q",
+                         rate.table[i, 1], 
+                         rate.table[i, 2],
+                         " ~ ",
+                         rate.table[i, 3],
+                         collapse="", sep="")
   }
+
   # lets store these in realy obvious names
-  formulae <- c(restricted, asc1, desc1, asc2, desc2, pol1, pol2, redip, tran12, tran21, dem1, dem2)
-  extras <- c("restricted", "asc1", "desc1", "asc2", "desc2", 
-              "pol1", "pol2", "redip", "tran12", "tran21", "dem1", "dem2")
+  extras <- c("asc1", "desc1", 
+              "asc2", "desc2", 
+              "pol1", "pol2", 
+              "redip", "tran12", "tran21", 
+              "dem1", "dem2")
+  
   lik.con <- constrain(lik, formulae=formulae, extra=extras)
   colnames(parMat) <- rownames(parMat) <- colnames(data)
   if(verbose==T){
