@@ -4,7 +4,7 @@
 \title{simulates chromosome number data
 }
 \description{
-Provides a simulation of chromosome number evolution based on tree and one of 3 models.
+Provides a simulation of chromosome number evolution based on tree and one of 3 models.  This function uses diversitrees sim.character to perform simulation.
 }
 \usage{
 simChrom(tree, pars, limits, model)
@@ -15,7 +15,7 @@ simChrom(tree, pars, limits, model)
 a phylogenetic tree of the class phylo
 }
   \item{pars}{
-numeric vector paramters the length of this vector depends on the model specified see details below
+numeric vector of paramters the length of this vector depends on the model specified see details below
 }
   \item{limits}{
 numeric vector of length 2 with upper and lower limit for chromosome number
@@ -26,18 +26,43 @@ A text string indicating the model for the simulation.  Options are "2010", "chr
 }
 \details{
 The model chosen will determine the correct form of the numeric vector supplied to the pars argument.  
-
-If model="2010" the pars vector should be length 5: rates of chromosome gain, chromosome loss, demipolyploidy, polyploidy, and the final value is the chromosome number at the root of the tree.  
-
-If model="chromRate" then the numeric vector supplied to pars should be length 11: chromosome gain in hyperstate 1 and hyperstate 2, chromosome loss in hyperstate 1 and hyperstate 2, demiploidy in hyperstate 1 and hyperstate 2, polyploidy in hyperstate 1 and hyperstate 2, transition from hyperstate 1 to 2, transition from hyperstate 2 to 1, and the chromosome number at the root of the tree.  
-
-
-**ploidevol model not yet coded up**
-
-If model="ploidEvol" then the numeric vector supplied to pars should be length 10: chromosome gain in diploids and polyploids, chromosome loss in diploids and polyploids, demiploidy in diploids and polyploids, polyploidy in diploids and polyploids, rediploidization, and the chromosome number at the root of the tree. 
+\cr \cr 
+If model="2010" the pars vector should be length 5: 
+\cr chromosome gain 
+\cr chromosome loss 
+\cr demipolyploidy 
+\cr polyploidy 
+\cr chromosome number at the root of the tree.  
+\cr \cr \cr 
+If model="ploidEvol" then the numeric vector supplied to pars should be length 11: 
+\cr chromosome gain in diploids 
+\cr chromosome gain in polyploids
+\cr chromosome loss in diploids
+\cr chromosome loss in polyploids
+\cr demiploidy in diploids
+\cr demiploidy in polyploids
+\cr polyploidy in diploids
+\cr polyploidy in polyploids
+\cr rediploidization
+\cr chromosome number at the root of the tree. 
+\cr ploidy level at the root of the tree (0=diploid, 1=polyploid)
+\cr \cr \cr 
+If model="chromRate" then the numeric vector supplied to pars should be length 12: 
+\cr chromosome gain in hyperstate 1  
+\cr chromosome gain in hyperstate 2 
+\cr chromosome loss in hyperstate 1 
+\cr chromosome loss in hyperstate 2 
+\cr demiploidy in hyperstate 1 
+\cr demiploidy in hyperstate 2 
+\cr polyploidy in hyperstate 1 
+\cr polyploidy in hyperstate 2 
+\cr transition from hyperstate 1 to 2 
+\cr transition from hyperstate 2 to 1 
+\cr chromosome number at the root of the tree
+\cr hyperstate at the root of the tree (0 or 1)
 }
 \value{
-a named numeric vector representing chromosome numbers at the tips of the tree is returned
+a named numeric vector representing chromosome numbers at the tips of the tree is returned for model="2010". For model="chromRate" and model="ploidEvol" a list of length 2 is returned containing the a vector of chromosome numbers for tips of the tree as well as a vector containing the hyperstate or ploidy for each tip.
 }
 \references{
 %% ~put references to the literature/web site here ~
@@ -54,4 +79,13 @@ Heath Blackmon}
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
+simChrom(trees, pars=c(.2, .2, .2, .2, 10),
+         limits = c(1, 100), model = "2010")         
+         
+simChrom(trees, pars=c(.2, .1, .1, .2, .1, .2, .4, .05, 1,  4, 0),
+         limits = c(1, 20), model = "ploidEvol")
+         
+simChrom(trees, pars=c(.2, .4, .2, .4, .2, .4, .2, .4, 1,  1, 10, 1), 
+         limits = c(1, 100), model = "chromRate")
+         
 }
