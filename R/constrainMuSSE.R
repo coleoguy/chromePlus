@@ -144,17 +144,14 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
       if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 9 # transitions state 2->1
     }
   }
-
   # we now have a matrix with a number 1-13 that matches the rates present
   # under one of our models we will use this to build our 
   # arguments for the standard diversitree constrain function
-
   rate.table <- as.data.frame(matrix(,nrow(parMat) * ncol(parMat), 3))
   rate.table[, 1] <- rep(as.character(row.names(parMat)), each=ncol(parMat))
   rate.table[, 2] <- rep(as.character(colnames(parMat)), nrow(parMat))
   rate.table[, 3] <- as.character(c(t(parMat)))
   rate.table <- rate.table[rate.table[, 1] != rate.table[2], ]
-  
   rate.table[rate.table[, 3] == 1, 3] <- "asc1"
   rate.table[rate.table[, 3] == 2, 3] <- "desc1"
   rate.table[rate.table[, 3] == 3, 3] <- "asc2"
@@ -168,7 +165,6 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
   rate.table[rate.table[, 3] == 11, 3] <- ".5*dem1"
   rate.table[rate.table[, 3] == 12, 3] <- "dem2"
   rate.table[rate.table[, 3] == 13, 3] <- ".5*dem2"
-  
   formulae <- vector(mode="character", length=nrow(rate.table))
   for(i in 1:nrow(rate.table)){
     formulae[i] <- paste("q",
@@ -178,11 +174,7 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
                          rate.table[i, 3],
                          collapse="", sep="")
   }
-  
-  
-  
-  
-    # Lambda and Mu
+  # Lambda and Mu
   for(i in 1:nrow(parMat)){
     # no hidden state
     if(hidden==F){
@@ -217,10 +209,6 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
     }
   }
   # lets store these in realy obvious names
-
-  
-  
-  
     extras <- c("asc1", "desc1", "asc2", "desc2", 
               "pol1", "pol2", "dem1", "dem2", "redip", "tran12", "tran21", 
               "lambda1", "mu1", "lambda2", "mu2")

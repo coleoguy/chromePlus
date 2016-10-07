@@ -4,13 +4,10 @@ simChrom <- function(tree, pars, limits, model){
   # pars: c(gain[1:2], loss[1:2], demi[1:2], poly[1:2], root)
   # limits: c(low, high)
   # model: "2010", "chromRate", "ploidEvol"
-  
-  
-  # having a demi rate of 0 creates error
-  #pars[pars == 0] <- .000000000000001
-  # the simulation process is the same for all models so we seperate out
+
   # the process of generating the qmat but that it
   if(model == "2010"){
+    print("building q-matrix")
     root <- pars[5]
     if(length(pars) != 5) stop("pars should have length of 5")
     # set up an empty matrix
@@ -26,17 +23,19 @@ simChrom <- function(tree, pars, limits, model){
         if(x %% 1 == 0)  q[i, which(chroms==x)] <- q[i, which(chroms==x)] + pars[3] #demi even
         if(x %% 1 != 0)  q[i, which(chroms %in% c(floor(x), ceiling(x)))] <- q[i, which(chroms %in% c(floor(x), ceiling(x)))] + pars[3]/2 #demi odd
       }
+      # special fix for chromosome num = 1
+      diag(q) <- 0
     }
   }
 
   if(model == "chromRate"){
+    print("building q-matrix")
     root <- pars[11]
     if(length(pars) != 11) stop("pars should have length of 11")
     # set up an empty matrix
     if(limits[2] < 100) pad <- 2
     if(limits[2] >= 100) pad <- 3
     if(limits[2] < 10) pad <- 1
-    
     parMat <- matrix(0, 2*length(limits[1]:limits[2]), 2*length(limits[1]:limits[2]))
     colnames(parMat) <- sprintf(paste('%0', pad, 'd', sep=""), 1:ncol(parMat))
     rownames(parMat) <- colnames(parMat)
@@ -73,14 +72,16 @@ simChrom <- function(tree, pars, limits, model){
         # special case for last row
         if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- pars[10] # transitions state 2->1
       }
-    q <- parMat
+    q <- parMat  
+    root <- as.numeric(colnames(q)[which(limits[1]:limits[2] == pars[11])])
     }
-
+  diag(q) <- 0
+  diag(q) <- -rowSums(q)
   
-  
-    diag(q) <- -rowSums(q)
-    # simulate the chromosome numbers
-    dsims <- geiger::sim.char(tree, q, model="discrete", root=root)[,,1]
+  # simulate the chromosome numbers
+  print("performing simulation")
+    dsims <- sim.character(tree, pars=q, x0=root, model="mkn")
+    attr(dsims, "node.state") <- NULL
     # save the names for various uses below
     tips <- names(dsims)
     # in the case of the 2010 model we have column names = to the
@@ -103,6 +104,7 @@ simChrom <- function(tree, pars, limits, model){
       # 2) chromosome number
       dsims[] <- c(chroms, chroms)[dsims]
       result <- list(b.state, dsims)
+      names(result) <- c("binary.state", "chrom.num")
       return(result)
     } 
 }
