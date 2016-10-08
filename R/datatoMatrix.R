@@ -11,7 +11,7 @@
 # polyploids: if T then an unobserved state for polypoidy
 # is created if F then basically you have the older style 
 # chromevol.
-datatoMatrix <- function(x, range, hyper = T){
+datatoMatrix <- function(x, range=NULL, hyper = T, buffer = 4){
   # perform data format checks
   if(!is.numeric(x[,2])) stop("chromosome number must be numeric")
   if(hyper==T){
@@ -23,6 +23,16 @@ datatoMatrix <- function(x, range, hyper = T){
     print("Chromosome numbers are being rounded to nearest whole number")
     x[,2] <- round(x[,2])
   }
+  
+  # automate the range argument based on input data
+  if(is.null(range)){
+    low <- min(x[,2]) - buffer
+    high <- max(x[,2]) + buffer
+    if(low < 1) low <- 1
+    range <- c(low, high)
+  }
+  
+  
   matsize <- range[2]-range[1]+1
   if(hyper == T){
     dmat <- matrix(0, nrow(x), matsize * 2)
