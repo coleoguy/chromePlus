@@ -20,7 +20,7 @@
 constrainMkn <- function(data, lik, hyper = T, polyploidy = T, equal.rates = F, 
                          verbose=F, constrain=list(drop.poly=F, 
                                                    drop.demi=F,
-                                                   singlerate=F, 
+                                                   singlerate=F, # doesnt have an effect in mkn
                                                    nometa=F, 
                                                    meta="ARD")){
   # This fills out the list of constraints the default are no constraints
@@ -160,6 +160,24 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, equal.rates = F,
   rate.table[rate.table[, 3] == 11, 3] <- ".5*dem1"
   rate.table[rate.table[, 3] == 12, 3] <- "dem2"
   rate.table[rate.table[, 3] == 13, 3] <- ".5*dem2"
+  
+  if(constrain$nometa == T){
+    rate.table[rate.table[, 3] == "asc2", 3] <- "asc1"
+    rate.table[rate.table[, 3] == "desc2", 3] <- "desc1"
+    rate.table[rate.table[, 3] == "pol2", 3] <- "pol1"
+    rate.table[rate.table[, 3] == "dem2", 3] <- "dem1"
+    rate.table[rate.table[, 3] == ".5*dem2", 3] <- ".5*dem1"
+  }
+  if(drop.poly == F){
+    rate.table[rate.table[, 3] == "pol1", 3] <- "0"
+    rate.table[rate.table[, 3] == "pol2", 3] <- "0"
+  }
+  if(drop.demi == F){
+    rate.table[rate.table[, 3] == "dem1", 3] <- "0"
+    rate.table[rate.table[, 3] == ".5*dem1", 3] <- "0"
+    rate.table[rate.table[, 3] == "dem2", 3] <- "0"
+    rate.table[rate.table[, 3] == ".5*dem2", 3] <- "0"
+  }
   
   formulae <- vector(mode="character", length=nrow(rate.table))
   for(i in 1:nrow(rate.table)){

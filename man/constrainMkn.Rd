@@ -27,28 +27,44 @@ This is a likelihood function created with make.mkn
   \item{verbose}{
 If \code{TRUE} then a list is returned with the first element containing the likelihood function and the second containing the rate identity matrix.
 }
+  \item{constrain}{
+Takes a list that can include up to 4 items to create different types of constrained models.  Options are explained below in the details section.
+}
 
 }
 \details{
 If the rate identity matrix is returned rates are indicated by the numbers:
+\cr rate1 ascending aneuploidy - state1
+\cr rate2 descending aneuploidy - state1
+\cr rate3 ascending aneuploidy - state2
+\cr rate4 descending aneuploidy - state2
+\cr rate5 polyploidization of state1
+\cr rate6 polploidization of state2
+\cr rate7 rediploidization of a state2
+\cr rate8 transitions from 1 to 2 for hyperstate
+\cr rate9 transitions from 2 to 1 for hyperstate
+\cr rate10 demipolyploidy for state1 - even
+\cr rate11 demipolyploidy for state1 - odd
+\cr rate12 demipolyploidy for state2 - even
+\cr rate13 demipolyploidy for state2 - odd
+\cr 
+\cr 
+\cr 
+The argument \code{constrain} can contain any of the items listed below.  The default state is shown.
+\cr 
+\cr \code{drop.poly=F}
+\cr Sets polyploidy rate to zero
+\cr 
+\cr \code{drop.demi=F}
+\cr Sets demiploidy rate to zero
+\cr 
+\cr \code{nometa=F}
+\cr Drops metastate from analysis
+\cr 
+\cr \code{meta="ARD"}
+\cr Can be set as either \code{"ARD"} or \code{"SYM"} these have the same meanings as \code{ace} in the APE package.
+\cr
 
-rate1 ascending aneuploidy - diploid or state 1 of hypertrait
-
-rate2 descending aneuploidy - diploid or state 1 of hypertrait
-
-rate3 ascending aneuploidy - polyploid or state 2 of hypertrait
-
-rate4 descending aneuploidy - polyploid or state 2 of hypertrait
-
-rate5 polyploidization of a diploid or state 1 of hypertrait
-
-rate6 polploidization of a polyploid or state 2 of hypertrait
-
-rate7 rediploidization of a polyploid
-
-rate8 transitions from state 1 to 2 of hypertrait
-
-rate9 transitions from state 2 to 1 of hypertrait
 }
 \value{
 constrained likelihood function is returned
