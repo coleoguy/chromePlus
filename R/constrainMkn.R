@@ -168,11 +168,11 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, equal.rates = F,
     rate.table[rate.table[, 3] == "dem2", 3] <- "dem1"
     rate.table[rate.table[, 3] == ".5*dem2", 3] <- ".5*dem1"
   }
-  if(drop.poly == F){
+  if(constrain$drop.poly == T){
     rate.table[rate.table[, 3] == "pol1", 3] <- "0"
     rate.table[rate.table[, 3] == "pol2", 3] <- "0"
   }
-  if(drop.demi == F){
+  if(constrain$drop.demi == T){
     rate.table[rate.table[, 3] == "dem1", 3] <- "0"
     rate.table[rate.table[, 3] == ".5*dem1", 3] <- "0"
     rate.table[rate.table[, 3] == "dem2", 3] <- "0"
