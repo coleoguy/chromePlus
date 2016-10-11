@@ -3,7 +3,7 @@ simChrom <- function(tree, pars, limits, model){
   # tree: phylo object
   # pars: c(gain[1:2], loss[1:2], demi[1:2], poly[1:2], root)
   # limits: c(low, high)
-  # model: "2010", "chromRate", "ploidEvol"
+  # model: "2010", "ChromTrait", "PloidEvol"
 
   # the process of generating the qmat but that it
   if(model == "2010"){
@@ -28,7 +28,7 @@ simChrom <- function(tree, pars, limits, model){
     }
   }
   ## CHROMRATE MODEL Q MATRIX
-  if(model == "chromRate"){
+  if(model == "ChromTrait"){
     print("building q-matrix")
     if(length(pars) != 12) stop("pars should have length of 12")
     # set up an empty matrix
@@ -80,11 +80,9 @@ simChrom <- function(tree, pars, limits, model){
       root <- as.numeric(colnames(q)[x])
     }
   }
-  
-  
-  
+
   ## PloidEvol MODEL Q MATRIX
-  if(model == "ploidEvol"){
+  if(model == "PloidEvol"){
     print("building q-matrix")
     if(length(pars) != 11) stop("pars should have length of 11")
     # set up an empty matrix
@@ -184,7 +182,7 @@ simChrom <- function(tree, pars, limits, model){
 
     # under the chromRate model things are bit more complex and have
     # to be converted back to chromosome number and binary state
-    if(model == "chromRate"){
+    if(model == "ChromTrait"){
       # for chromRate we need to return two vectors
       # 1) binary state 
       b.state <- rep(0, length(dsims))
@@ -201,7 +199,7 @@ simChrom <- function(tree, pars, limits, model){
     
     # under the chromRate model things are bit more complex and have
     # to be converted back to chromosome number and binary state
-    if(model == "ploidEvol"){
+    if(model == "PloidEvol"){
       # for chromRate we need to return two vectors
       # 1) binary state 
       b.state <- rep(0, length(dsims))

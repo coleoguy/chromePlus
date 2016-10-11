@@ -24,13 +24,16 @@
 
 constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T, 
                            polyploidy = T, verbose=F, 
-                           constrain=list(drop.poly=F, drop.demi=F, 
-                                          singlerate=F, nometa=F, meta="ARD")){
+                           constrain=list(drop.poly=F, 
+                                          drop.demi=F, 
+                                          symmetric=F, 
+                                          nometa=F, 
+                                          meta="ARD")){
   # This fills out the list of constraints the default are no constraints
   if(length(constrain) < 5){
     if(is.null(constrain$drop.pol)) constrain$drop.poly=F
     if(is.null(constrain$drop.demi)) constrain$drop.demi=F
-    if(is.null(constrain$singlerate)) constrain$singlerate=F
+    if(is.null(constrain$symmetric)) constrain$symmetric=F
     if(is.null(constrain$nometa)) constrain$nometa=F
     if(is.null(constrain$meta)) constrain$meta="ARD"
   }
@@ -165,6 +168,45 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
   rate.table[rate.table[, 3] == 11, 3] <- ".5*dem1"
   rate.table[rate.table[, 3] == 12, 3] <- "dem2"
   rate.table[rate.table[, 3] == 13, 3] <- ".5*dem2"
+  
+  
+  if(constrain$nometa == T){
+    rate.table[rate.table[, 3] == "asc2", 3] <- "asc1"
+    rate.table[rate.table[, 3] == "desc2", 3] <- "desc1"
+    rate.table[rate.table[, 3] == "pol2", 3] <- "pol1"
+    rate.table[rate.table[, 3] == "dem2", 3] <- "dem1"
+    rate.table[rate.table[, 3] == ".5*dem2", 3] <- ".5*dem1"
+  }
+  
+  if(constrain$drop.poly == T){
+    rate.table[rate.table[, 3] == "pol1", 3] <- "0"
+    rate.table[rate.table[, 3] == "pol2", 3] <- "0"
+  }
+  
+  if(constrain$drop.demi == T){
+    rate.table[rate.table[, 3] == "dem1", 3] <- "0"
+    rate.table[rate.table[, 3] == ".5*dem1", 3] <- "0"
+    rate.table[rate.table[, 3] == "dem2", 3] <- "0"
+    rate.table[rate.table[, 3] == ".5*dem2", 3] <- "0"
+  }
+  
+  if(constrain$symmetric == T){
+    rate.table[rate.table[, 3] == "desc1", 3] <- "asc1"
+    rate.table[rate.table[, 3] == "desc2", 3] <- "asc2"
+    rate.table[rate.table[, 3] == "pol2", 3] <- "pol1"
+    rate.table[rate.table[, 3] == 7, 3] <- "redip"
+    rate.table[rate.table[, 3] == 8, 3] <- "tran12"
+    rate.table[rate.table[, 3] == 9, 3] <- "tran21"
+    rate.table[rate.table[, 3] == "dem2", 3] <- "dem1"
+    rate.table[rate.table[, 3] == ".5*dem2", 3] <- ".5*dem1"
+  }
+
+  if(constrain$meta == "SYM"){
+    rate.table[rate.table[, 3] == "tran21", 3] <- "tran12"
+  }
+  
+  
+
   formulae <- vector(mode="character", length=nrow(rate.table))
   for(i in 1:nrow(rate.table)){
     formulae[i] <- paste("q",
@@ -174,6 +216,10 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
                          rate.table[i, 3],
                          collapse="", sep="")
   }
+  
+  ## This section could be sped up by getting rid of loop
+  
+  lambda <- mu <- vector()
   # Lambda and Mu
   for(i in 1:nrow(parMat)){
     # no hidden state
@@ -212,7 +258,7 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
     extras <- c("asc1", "desc1", "asc2", "desc2", 
               "pol1", "pol2", "dem1", "dem2", "redip", "tran12", "tran21", 
               "lambda1", "mu1", "lambda2", "mu2")
-  lik.con <- constrain(lik, formulae=formulae, extra=extras)
+  lik.con <- constrain(lik, formulae=c(formulae, lambda, mu), extra=extras)
   colnames(parMat) <- rownames(parMat) <- colnames(data)
   if(verbose==T) return(list(lik.con, parMat))
   if(verbose==F) return(lik.con)

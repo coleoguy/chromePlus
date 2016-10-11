@@ -21,7 +21,7 @@ numeric vector of paramters the length of this vector depends on the model speci
 numeric vector of length 2 with upper and lower limit for chromosome number
 }
   \item{model}{
-A text string indicating the model for the simulation.  Options are "2010", "chromRate", or "ploidEvol"
+A text string indicating the model for the simulation.  Options are "2010", "ChromTrait", or "PloidEvol"
 }
 }
 \details{
@@ -34,7 +34,7 @@ If model="2010" the pars vector should be length 5:
 \cr polyploidy 
 \cr chromosome number at the root of the tree.  
 \cr \cr \cr 
-If model="ploidEvol" then the numeric vector supplied to pars should be length 11: 
+If model="PloidEvol" then the numeric vector supplied to pars should be length 11: 
 \cr chromosome gain in diploids 
 \cr chromosome gain in polyploids
 \cr chromosome loss in diploids
@@ -47,7 +47,7 @@ If model="ploidEvol" then the numeric vector supplied to pars should be length 1
 \cr chromosome number at the root of the tree. 
 \cr ploidy level at the root of the tree (0=diploid, 1=polyploid)
 \cr \cr \cr 
-If model="chromRate" then the numeric vector supplied to pars should be length 12: 
+If model="ChromTrait" then the numeric vector supplied to pars should be length 12: 
 \cr chromosome gain in hyperstate 1  
 \cr chromosome gain in hyperstate 2 
 \cr chromosome loss in hyperstate 1 

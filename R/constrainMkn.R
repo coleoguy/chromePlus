@@ -20,14 +20,14 @@
 constrainMkn <- function(data, lik, hyper = T, polyploidy = T, equal.rates = F, 
                          verbose=F, constrain=list(drop.poly=F, 
                                                    drop.demi=F,
-                                                   singlerate=F, # doesnt have an effect in mkn
+                                                   symmetric=F, 
                                                    nometa=F, 
                                                    meta="ARD")){
   # This fills out the list of constraints the default are no constraints
   if(length(constrain) < 5){
     if(is.null(constrain$drop.pol)) constrain$drop.poly=F
     if(is.null(constrain$drop.demi)) constrain$drop.demi=F
-    if(is.null(constrain$singlerate)) constrain$singlerate=F
+    if(is.null(constrain$symmetric)) constrain$symmetric=F
     if(is.null(constrain$nometa)) constrain$nometa=F
     if(is.null(constrain$meta)) constrain$meta="ARD"
   }
@@ -168,15 +168,32 @@ constrainMkn <- function(data, lik, hyper = T, polyploidy = T, equal.rates = F,
     rate.table[rate.table[, 3] == "dem2", 3] <- "dem1"
     rate.table[rate.table[, 3] == ".5*dem2", 3] <- ".5*dem1"
   }
+  
   if(constrain$drop.poly == T){
     rate.table[rate.table[, 3] == "pol1", 3] <- "0"
     rate.table[rate.table[, 3] == "pol2", 3] <- "0"
   }
+  
   if(constrain$drop.demi == T){
     rate.table[rate.table[, 3] == "dem1", 3] <- "0"
     rate.table[rate.table[, 3] == ".5*dem1", 3] <- "0"
     rate.table[rate.table[, 3] == "dem2", 3] <- "0"
     rate.table[rate.table[, 3] == ".5*dem2", 3] <- "0"
+  }
+
+  if(constrain$symmetric == T){
+    rate.table[rate.table[, 3] == "desc1", 3] <- "asc1"
+    rate.table[rate.table[, 3] == "desc2", 3] <- "asc2"
+    rate.table[rate.table[, 3] == "pol2", 3] <- "pol1"
+    rate.table[rate.table[, 3] == 7, 3] <- "redip"
+    rate.table[rate.table[, 3] == 8, 3] <- "tran12"
+    rate.table[rate.table[, 3] == 9, 3] <- "tran21"
+    rate.table[rate.table[, 3] == "dem2", 3] <- "dem1"
+    rate.table[rate.table[, 3] == ".5*dem2", 3] <- ".5*dem1"
+  }
+  
+  if(constrain$meta == "SYM"){
+    rate.table[rate.table[, 3] == "tran21", 3] <- "tran12"
   }
   
   formulae <- vector(mode="character", length=nrow(rate.table))

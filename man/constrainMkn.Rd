@@ -58,6 +58,9 @@ The argument \code{constrain} can contain any of the items listed below.  The de
 \cr \code{drop.demi=F}
 \cr Sets demiploidy rate to zero
 \cr 
+\cr \code{symmetric=F}
+\cr Sets all chromosome change rates to be symmetric
+\cr 
 \cr \code{nometa=F}
 \cr Drops metastate from analysis
 \cr 
