@@ -34,17 +34,7 @@ If \code{TRUE} then polyploidy is assumed to be the metastate
 If \code{TRUE} then a list is returned with the first element containing the likelihood function and the second containing the rate identity matrix.
 }
   \item{constrain}{
-a list capable of carrying additional model constraints these include: 
-
-drop.poly if T polyoploidy is dropped from model
-
-drop.demi if T demiploidy is dropped from model
-
-singlerate if T model is constrained so gain1=loss1 and gain2=loss2
-
-nometa if T model is constrained so gain1=gain2 and loss1=loss2
-
-meta model specificatin for binary character options are ARD and SYM the same as in APE
+a list capable of carrying additional model constraints these include see details for specifications.
 
 }
 }
@@ -68,6 +58,29 @@ rate7 rediploidization of a polyploid
 rate8 transitions from state 1 to 2 of hypertrait
 
 rate9 transitions from state 2 to 1 of hypertrait
+
+\cr 
+\cr 
+\cr 
+The argument \code{constrain} can contain any of the items listed below.  The default state is shown.
+\cr 
+\cr \code{drop.poly=F}
+\cr Sets polyploidy rate to zero
+\cr 
+\cr \code{drop.demi=F}
+\cr Sets demiploidy rate to zero
+\cr 
+\cr \code{symmetric=F}
+\cr Sets all chromosome change rates to be symmetric
+\cr 
+\cr \code{nometa=F}
+\cr Drops metastate from analysis
+\cr 
+\cr \code{meta="ARD"}
+\cr Can be set as either \code{"ARD"} or \code{"SYM"} these have the same meanings as \code{ace} in the APE package.
+\cr
+
+
 
 }
 \value{
