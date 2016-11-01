@@ -1,4 +1,4 @@
-chomevolR
+chomePlus
 ====
 
 R package for the analysis of chromosome number evolution
@@ -9,8 +9,8 @@ This package is in the early stages of development and should not be used for an
 ```
 install.packages("devtools")
 library(devtools)
-install_github('coleoguy/chromevolR')
-library(chromevolR)
+install_github('coleoguy/chromePlus')
+library(chromePlus)
 ```
 
 
