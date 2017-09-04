@@ -3,6 +3,7 @@ export(constrainMkn)
 export(datatoMatrix)
 export(simChrom)
 export(startVals)
+export(makeSSEchrom)
 
-importFrom(diversitree, find.mle, make.mkn, constrain, sim.character)
+importFrom(diversitree, find.mle, make.mkn, constrain, sim.character, make.musse)
 
