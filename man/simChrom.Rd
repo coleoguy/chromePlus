@@ -86,6 +86,6 @@ simChrom(trees, pars=c(.2, .1, .1, .2, .1, .2, .4, .05, 1,  4, 0),
          limits = c(1, 20), model = "ploidEvol")
          
 simChrom(trees, pars=c(.2, .4, .2, .4, .2, .4, .2, .4, 1,  1, 10, 1), 
-         limits = c(1, 100), model = "chromRate")
+         limits = c(1, 100), model = "ChromTrait")
          
 }

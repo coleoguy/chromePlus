@@ -12,13 +12,6 @@
 # is created if F then basically you have the older style 
 # chromevol.
 datatoMatrix <- function(x, range=NULL, hyper = T, buffer = 4){
-  # perform data format checks
-  if(!is.numeric(x[,2])) stop("chromosome number must be numeric")
-  if(hyper==T){
-    if(ncol(x)<3) stop("dataframe should have three columns containing species names, chromosome number and probability of state one for the binary character")
-    if(!is.numeric(x[,3])) stop("probability of state on must be numeric")
-    if(max(x[,3])>1 | min(x[,3]<0)) stop("column three must be a probability betwen 0 and 1")
-  }
   if(sum(x[,2] != round(x[,2])) > 0){
     print("Chromosome numbers are being rounded to nearest whole number")
     x[,2] <- round(x[,2])
