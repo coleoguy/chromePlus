@@ -11,7 +11,7 @@ of speciation, extinction, chromosome gain, and chromosome loss.
 \usage{
 makeSSEchrom(h, lambda1, lambda2, mu1, mu2, 
              asc1, asc2, desc1, desc2, trans1, trans2, 
-             max.taxa, max taxa, x0)
+             max.taxa, x0)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

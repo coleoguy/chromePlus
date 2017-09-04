@@ -5,5 +5,5 @@ export(simChrom)
 export(startVals)
 export(makeSSEchrom)
 
-importFrom(diversitree, find.mle, make.mkn, constrain, sim.character, make.musse)
+importFrom(diversitree, find.mle, make.mkn, constrain, sim.character, tree.musse)
 
