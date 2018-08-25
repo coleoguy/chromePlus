@@ -21,61 +21,148 @@ knitr::include_graphics("model.png", dpi=400)
 
 **Figure 1 ChromePlus Model**
 
-## Workflow
-
-### Reading in data
-
-The first step in the analysis is to read in our data and format it in a structure that is compatible with diversitrees make.mkn and make.musse functions.  Our package provides the datatoMatrix function to do this.
+## Simple model chromosome increase, decrease, and whole genome duplication only:
 
 ```{r}
-# this is our tree
+# load packages
 library(chromePlus)
 library(diversitree)
+
+# read tree
 tree <- read.tree("../inst/tree.new")
 
-# read in your csv file with species, chromosomes, and binary character
+# read data
 dat1 <- read.csv("../inst/tip.data.certain.csv", as.is = T)
+
+# convert data appropriate for analysis
+dat.mat <- datatoMatrix(x     = dat1,
+                        range = c(18,80),
+                        hyper = F)   # this indicates no binary trait
+
+# make the basic likelihood function
+lik <- make.mkn(tree = tree,
+                states = dat.mat,
+                k = ncol(dat.mat),
+                strict= F,
+                control=list(method="ode"))
+
+# constrain the likelihood function to a biologically realistic design
+con.lik <- constrainMkn(data = dat.mat,
+                        lik = lik,
+                        polyploidy = F,
+                        hyper = F,
+                        constrain = list(drop.demi = T,
+                                         drop.poly= F))
+
+# lets make sure we have the parameters we expect
+argnames(con.lik)
+```
+
+
+## Model with a binary state that impacts chromosome evolution
+
+```{r}
+
+# load packages
+library(chromePlus)
+library(diversitree)
+
+# read tree
+tree <- read.tree("../inst/tree.new")
+
+# read data
+dat1 <- read.csv("../inst/tip.data.certain.csv", as.is = T)
+
+# convert data appropriate for analysis
+dat.mat <- datatoMatrix(x     = dat1,
+                        range = c(18,80),
+                        hyper = T)   # this indicates no binary trait
+
+# make the basic likelihood function
+lik <- make.mkn(tree = tree,
+                states = dat.mat,
+                k = ncol(dat.mat),
+                strict= F,
+                control=list(method="ode"))
+
+# constrain the likelihood function to a biologically realistic design
+con.lik <- constrainMkn(data = dat.mat,
+                        lik = lik,
+                        polyploidy = F,
+                        hyper = T,
+                        constrain = list(drop.demi = T,
+                                         drop.poly= F))
+
+# lets make sure we have the parameters we expect
+argnames(con.lik)
+```
+
+
+## More complex model with uncertainty in tip states, different rates of chromosomes evolution, speciation, and extinction rates associated with the binary character.
+
+```{r}
+
+# load packages
+library(chromePlus)
+library(diversitree)
+
+# read tree
+tree <- read.tree("../inst/tree.new")
+
+# read data
 dat2 <- read.csv("../inst/tip.data.uncertain.csv", as.is = T)
-dat.mat1 <- datatoMatrix(x     = dat1,
-                         range = c(18,80),
-                         hyper = T)
+
+# prepare data
 dat.mat2 <- datatoMatrix(x     = dat2,
                          range = c(18,80),
                          hyper = T)
-```
 
-We have read in two version of our data.  Version one each tip has an observed state with no uncertainty.  Version two has uncertainty in the state observed at the tip. This function has created a matrix where the rows are the species and the columns are all possible states.  Each species row will sum to one and the values present in the cells represent the probability that a species has a particular value. With this framework it is straight-forward to include uncertainty in observed tip values or if working with a higher level tree to represent all observed states in an unresolved clade.
-
-### making a likelihood function
-
-We can now use our tree and this data matrix to construct a mkn likelihood function in diversitree:
-
-```{r}
-library(diversitree)
-lik1 <- make.mkn(tree = tree,
-                 states = dat.mat1,
-                 k = ncol(dat.mat1),
-                 strict= F,
-                 control=list(method="ode"))
-```
-
-The current version of make.mkn doesn't allow for uncertainty in tip states.  However, we can use the make.musse function if we have uncertainty.
-
-```{r}
-tree <- read.tree("../inst/tree.new")
-library(diversitree)
+# make the basic likelihood function
 lik2 <- make.musse(tree = tree,
                    states = dat.mat2,
                    k = ncol(dat.mat2),
                    strict= F,
                    control=list(method="ode"))
+
+# constrain to biological reality
+con.lik2 <- constrainMuSSE(data = dat.mat2,
+                           lik = lik2,
+                           s.lambda = F,
+                           s.mu = F,
+                           polyploidy = F,
+                           hyper = T,
+                           constrain = list(drop.demi = T,
+                                            drop.poly= F))
+argnames(con.lik2)
+
 ```
 
-The likelihood functions that we have created have one problem.  By default all transitions between states are possible meaning that in this case we have between 15 and 16 thousand parameters in our model.  This means that we need to constrain our models to match the more biologically realistic version we have shown in figure 1.
+In all cases once we have a biologically realistic model we can fit it using `find.mle` or `mcmc` from the package diversitree. A brief example is shown below in depth discussion of these functions is available in diversitree.
 
-### Constraining likelihood functions MuSSE version
+```{}
+find.mle(con.lik2, x.init = runif(min = 0, max = 1, n = 5))
+mcmc(con.lik2, x.init = runif(min = 0, max = 1, n = 5), w = 1, nsteps = 10)
+```
 
-We constrain our MuSSE likelihood functions using the R function `constrainMuSSE`. It has a series of arguments that allow for realistic models of chromosome evolution.  The default settings for the functions is to fit the most complex model with all possible transitions shown in figure one estimated seperately.  The table below details the arguments that can be used to simplify this full model.
+## constraining models
+
+The function `constrainMkn` has a series of arguments that allow for realistic models of chromosome evolution.  The default settings for the functions is to fit the most complex model with all possible transitions shown in figure one estimated seperately.  The table below details the arguments that can be used to simplify this full model.
+
+Argument    |Effect
+------------|------------------------------------------
+hyper       |when set to `FALSE` the binary state is ignored so only a single rate of gain, loss, demiploidy, and polyploidy are possible
+polyploidy  |if set to `TRUE` the the hyper state that is evaluated is polyploidy this means that transition from state 1 to state 2 in the binary character also double the chromosome number
+constrain   |is given a list with any of the 5 additional constraint descriptions given below
+            |
+drop.poly   |if set to `TRUE` then the rate of polyploidy is set to zero
+drop.demi   |if set to `TRUE` then the rate of demiploidy is set to zero
+symmetric   |if set to `TRUE` then the rates estimated in the two binary states are forced to be equal
+nometa      |if set to `TRUE` then the binary state is ignored
+meta="ARD"  |can be set to "ARD" or "SYM" to describe wether q12 and q21 are the same or different
+
+
+
+The function `constrainMuSSE` has a series of arguments that allow for realistic models of chromosome evolution.  The default settings for the functions is to fit the most complex model with all possible transitions shown in figure one estimated seperately.  The table below details the arguments that can be used to simplify this full model.
 
 Argument    |Effect
 ------------|------------------------------------------
@@ -90,24 +177,6 @@ drop.demi   |if set to `TRUE` then the rate of demiploidy is set to zero
 symmetric   |if set to `TRUE` then the rates estimated in the two binary states are forced to be equal
 nometa      |if set to `TRUE` then the binary state is ignored
 meta="ARD"  |can be set to "ARD" or "SYM" to describe wether q12 and q21 are the same or different
-
-
-As an example lets take are full MuSSE likelihood function created by diversitree.  Diversitree assumes no model of evolution so every transition is given a unique rate.  This leads to an enormous number of parameters in this case `r length(argnames(lik2))`.  Lets reduce this down by building a model where only increase, decrease by one, polyploidy, speciation and extinction are estimated.  All other kinds of transitions will be set to a rate of zero (e.g. no transitions from 7 chromosomes to 10).
-
-```{r}
-con.lik2 <- constrainMuSSE(data = dat.mat2,
-                           lik = lik2,
-                           polyploidy = F,
-                           constrain = list(drop.demi = T,
-                                            drop.poly= F,
-                                            nometa= T))
-# lets check and see what we have done by looking at the 
-# parameters in are new likelihood model.
-argnames(con.lik2)
-```
-
-
-
 
 
 
