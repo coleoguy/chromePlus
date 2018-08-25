@@ -22,8 +22,13 @@
 # rate12 demipolyploidy for state2            dem2 even
 # rate13 demipolyploidy for state2            dem2 odd
 
-constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T, 
-                           polyploidy = T, verbose=F, 
+constrainMuSSE <- function(data, 
+                           lik, 
+                           hyper = T, 
+                           polyploidy = F, 
+                           s.lambda = T, 
+                           s.mu = T, 
+                           verbose=F, 
                            constrain=list(drop.poly=F, 
                                           drop.demi=F, 
                                           symmetric=F, 
@@ -53,10 +58,9 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
   # we need to know where our duplication of the matrix begins so here is that
   split <- ncol(parMat)/2
   
-  ## TODO CHANGE HIDDEN TO HYPER
   # we also need the actual chromosome numbers
-  if(hidden==T) chroms <- as.numeric(colnames(data)[1:split])
-  if(hidden==F) chroms <- as.numeric(colnames(data))
+  if(hyper==T) chroms <- as.numeric(colnames(data)[1:split])
+  if(hyper==F) chroms <- as.numeric(colnames(data))
   
   ## NOW WE HAVE A SERIES OF LOOPS THAT FILL IN OUR parMat
   ## MATRIX WITH NUMBERS 1:13 INDICATIVE OF THE DIFFERENT POSSIBLE
@@ -64,7 +68,7 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
   ## REPRESENT A DIFFERENT MODEL OF CHROMOSOME EVOLUTION
   
   ## OLD CRHOMEVOL MODEL
-  if(hidden==F){
+  if(hyper==F){
     print("Constraining model to simple chromevol version")
     for(i in 1:(nrow(parMat) - 1)){
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy
@@ -80,8 +84,8 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
     # this transition should be = ascending + polyploidy this should
   }
   
-  # BiSCE MODEL 1 PLOIDY IS HIDDEN STATE
-  if(hidden==T & polyploidy == T){
+  # BiSCE MODEL 1 PLOIDY IS hyper STATE
+  if(hyper==T & polyploidy == T){
     print("Constraining model where ploidy is a meta state and different rates of chromosome evolution are possible based on being polyploid or diploid")
     # diploid rates
     for(i in 1:(split - 1)){
@@ -113,7 +117,7 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
   }
   
   # BiSPCE 2 PLOIDY IS NOT THE HYPER STATE
-  if(hidden==T & polyploidy == F){
+  if(hyper==T & polyploidy == F){
     print("Constraining model with a hyper state that may have different rates of chromsome number evolution")
     # state 1 rates
     for(i in 1:(split - 1)){
@@ -222,21 +226,21 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
   lambda <- mu <- vector()
   # Lambda and Mu
   for(i in 1:nrow(parMat)){
-    # no hidden state
-    if(hidden==F){
+    # no hyper state
+    if(hyper==F){
       lambda <- c(lambda, paste("lambda", colnames(parMat)[i], " ~ lambda1", sep = ""))
       mu <- c(mu, paste("mu", colnames(parMat)[i], " ~ mu1", sep = ""))
     }
-    # hidden model with single lambda
-    if(hidden == T & s.lambda == T){
+    # hyper model with single lambda
+    if(hyper == T & s.lambda == T){
       lambda <- c(lambda, paste("lambda", colnames(parMat)[i], " ~ lambda1", sep = ""))
     }
-    # hidden model with single mu
-    if(hidden == T & s.mu == T){
+    # hyper model with single mu
+    if(hyper == T & s.mu == T){
       mu <- c(mu, paste("mu", colnames(parMat)[i], " ~ mu1", sep = ""))
     }
-    # hidden model with two lambdas
-    if(hidden == T & s.lambda == F){
+    # hyper model with two lambdas
+    if(hyper == T & s.lambda == F){
       if(i <= split){
         lambda <- c(lambda, paste("lambda", colnames(parMat)[i], " ~ lambda1", sep = ""))
       }
@@ -244,8 +248,8 @@ constrainMuSSE <- function(data, lik, hidden = T, s.lambda = T, s.mu = T,
         lambda <- c(lambda, paste("lambda", colnames(parMat)[i], " ~ lambda2", sep = ""))
       }
     }
-    # hidden model with two mus
-    if(hidden == T & s.mu == F){
+    # hyper model with two mus
+    if(hyper == T & s.mu == F){
       if(i <= split){
         mu <- c(mu, paste("mu", colnames(parMat)[i], " ~ mu1", sep = ""))
       }

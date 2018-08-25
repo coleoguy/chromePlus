@@ -34,6 +34,20 @@ If model="2010" the pars vector should be length 5:
 \cr polyploidy 
 \cr chromosome number at the root of the tree.  
 \cr \cr \cr 
+If model="ChromPlus" then the numeric vector supplied to pars should be length 12: 
+\cr chromosome gain in hyperstate 1  
+\cr chromosome gain in hyperstate 2 
+\cr chromosome loss in hyperstate 1 
+\cr chromosome loss in hyperstate 2 
+\cr demiploidy in hyperstate 1 
+\cr demiploidy in hyperstate 2 
+\cr polyploidy in hyperstate 1 
+\cr polyploidy in hyperstate 2 
+\cr transition from hyperstate 1 to 2 
+\cr transition from hyperstate 2 to 1 
+\cr chromosome number at the root of the tree
+\cr hyperstate at the root of the tree (1 or 2)
+\cr \cr \cr 
 If model="PloidEvol" then the numeric vector supplied to pars should be length 11: 
 \cr chromosome gain in diploids 
 \cr chromosome gain in polyploids
@@ -46,20 +60,6 @@ If model="PloidEvol" then the numeric vector supplied to pars should be length 1
 \cr rediploidization
 \cr chromosome number at the root of the tree. 
 \cr ploidy level at the root of the tree (0=diploid, 1=polyploid)
-\cr \cr \cr 
-If model="ChromTrait" then the numeric vector supplied to pars should be length 12: 
-\cr chromosome gain in hyperstate 1  
-\cr chromosome gain in hyperstate 2 
-\cr chromosome loss in hyperstate 1 
-\cr chromosome loss in hyperstate 2 
-\cr demiploidy in hyperstate 1 
-\cr demiploidy in hyperstate 2 
-\cr polyploidy in hyperstate 1 
-\cr polyploidy in hyperstate 2 
-\cr transition from hyperstate 1 to 2 
-\cr transition from hyperstate 2 to 1 
-\cr chromosome number at the root of the tree
-\cr hyperstate at the root of the tree (0 or 1)
 }
 \value{
 a named numeric vector representing chromosome numbers at the tips of the tree is returned for model="2010". For model="chromRate" and model="ploidEvol" a list of length 2 is returned containing the a vector of chromosome numbers for tips of the tree as well as a vector containing the hyperstate or ploidy for each tip.

@@ -28,7 +28,7 @@ simChrom <- function(tree, pars, limits, model){
     }
   }
   ## CHROMRATE MODEL Q MATRIX
-  if(model == "ChromTrait"){
+  if(model == "ChromPlus"){
     print("building q-matrix")
     if(length(pars) != 12) stop("pars should have length of 12")
     # set up an empty matrix

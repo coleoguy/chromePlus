@@ -8,7 +8,7 @@ Convert a typical data table to probability matrix
 Returns a probability matrix where each column represents a discrete state and each row is a species.  Values in the matrix describe the probability of being in any of these states. If a hyper state is specified each species is assumed to be present with equal probability in either hyper state.
 }
 \usage{
-datatoMatrix(x, range, hyper = F)
+datatoMatrix(x, range, hyper = T)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

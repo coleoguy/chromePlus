@@ -4,6 +4,5 @@ export(datatoMatrix)
 export(simChrom)
 export(startVals)
 export(makeSSEchrom)
-
 importFrom(diversitree, find.mle, make.mkn, constrain, sim.character, tree.musse)
 

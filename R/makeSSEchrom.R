@@ -56,8 +56,8 @@ makeSSEchrom <- function(h,                 # max haploid number
     class(tree) <- "phylo"
     z <- musse$tip.state
     bin.char <- chrom.char <- musse$tip.state
-    bin.char[musse$tip.state <= (k / 2)] <- 1
-    bin.char[musse$tip.state > (k / 2)] <- 0
+    bin.char[musse$tip.state <= (k / 2)] <- 0
+    bin.char[musse$tip.state > (k / 2)] <- 1
     for(i in 1:length(musse$tip.state)){
       if(musse$tip.state[i] > (k / 2)) chrom.char[i] <- 
           (chrom.char[i] - (k / 2))

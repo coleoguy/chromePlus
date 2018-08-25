@@ -1,6 +1,6 @@
 ---
-title: "Vignette Title"
-author: "Vignette Author"
+title: "ChromePlus"
+author: "Heath Blackmon"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -9,50 +9,105 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
+## The model for ChromPlus
 
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
+Our model builds on existing dynamic phylogenetic models of chromosome number evolution (mayrose2010, glick2014), and, like the model of zenil 2017, it incorporates a binary trait that can affect rates of chromosome number change. Additionally, our model can allow for the binary trait to affect rates of speciation and extinction. Accounting for the possibility of state dependent diversification is a vital component because of the history of speciation models that invoke chromosomal evolution (bickham1979, grant1981, templeton1981, baker1986). Our model implementation is available in an R package called chromePlus <github.com/coleoguy/chromePlus>. It is built on the diversitree framework (fitzjohn2012), which provides additional amenities such as allowing for uncertainty in the binary character state, sampling incompleteness, and use of existing MCMC (Markov Chain Monte Carlo) or likelihood maximization functions to estimate model parameters.
 
-## Vignette Info
+A graphical schematic of our model is shown in Figure 1, depicting the ten possible kinds of state transitions. While in binary state 1 a lineage with $i$ chromosomes may first simply stay in its current state. Otherwise, it may either increase chromosome number to $i+1$ (ascending dysploidy, $\lambda_1$), reduce chromosome number to $i-1$ (descending dysploidy, $\delta_1$), or increase chromosome number to $1.5i$ or $2i$ (demi-polyploidy, $\mu_1$ and polyploidy, $\rho_1$ respectively). Likewise, a lineage in binary state 2 with $i$ chromosomes may remain in its current state, increase chromosome number to $i+1$ (ascending dysploidy, $\lambda_2$), reduce chromosome number to $i-1$ (descending dysploidy, $\delta_2$), or increase chromosome number to $1.5i$ or $2i$ (demi-polyploidy, $\mu_2$ and polyploidy, $\rho_2$ respectively). Additionally, a lineage that is currently in one of the binary states can transition to the other state (transition from state 1 to state 2, $q_{12}$ or from state 2 state 1, $q_{21}$); these transitions occur with no change in the chromosome number. Because chromosome number is limited to whole numbers, demi-polyploidy as described above would only be possible for even values of $i$. As in previous work, we assume that demi-polyploidy when $i$ is odd leads to either of the closest whole numbers with equal probability. The state-dependent version of our model has four additional parameters: speciation and extinction in binary state 1, and speciation and extinction in binary state 2.
 
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
-
-## Styles
-
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
-
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
-
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side. 
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+```{r,echo=F}
+knitr::include_graphics("model.png", dpi=400)
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
+**Figure 1 ChromePlus Model**
 
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
+## Workflow
 
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+### Reading in data
 
-## More Examples
+The first step in the analysis is to read in our data and format it in a structure that is compatible with diversitrees make.mkn and make.musse functions.  Our package provides the datatoMatrix function to do this.
 
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+```{r}
+# this is our tree
+library(chromePlus)
+library(diversitree)
+tree <- read.tree("../inst/tree.new")
 
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+# read in your csv file with species, chromosomes, and binary character
+dat1 <- read.csv("../inst/tip.data.certain.csv", as.is = T)
+dat2 <- read.csv("../inst/tip.data.uncertain.csv", as.is = T)
+dat.mat1 <- datatoMatrix(x     = dat1,
+                         range = c(18,80),
+                         hyper = T)
+dat.mat2 <- datatoMatrix(x     = dat2,
+                         range = c(18,80),
+                         hyper = T)
 ```
 
-Also a quote using `>`:
+We have read in two version of our data.  Version one each tip has an observed state with no uncertainty.  Version two has uncertainty in the state observed at the tip. This function has created a matrix where the rows are the species and the columns are all possible states.  Each species row will sum to one and the values present in the cells represent the probability that a species has a particular value. With this framework it is straight-forward to include uncertainty in observed tip values or if working with a higher level tree to represent all observed states in an unresolved clade.
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+### making a likelihood function
+
+We can now use our tree and this data matrix to construct a mkn likelihood function in diversitree:
+
+```{r}
+library(diversitree)
+lik1 <- make.mkn(tree = tree,
+                 states = dat.mat1,
+                 k = ncol(dat.mat1),
+                 strict= F,
+                 control=list(method="ode"))
+```
+
+The current version of make.mkn doesn't allow for uncertainty in tip states.  However, we can use the make.musse function if we have uncertainty.
+
+```{r}
+tree <- read.tree("../inst/tree.new")
+library(diversitree)
+lik2 <- make.musse(tree = tree,
+                   states = dat.mat2,
+                   k = ncol(dat.mat2),
+                   strict= F,
+                   control=list(method="ode"))
+```
+
+The likelihood functions that we have created have one problem.  By default all transitions between states are possible meaning that in this case we have between 15 and 16 thousand parameters in our model.  This means that we need to constrain our models to match the more biologically realistic version we have shown in figure 1.
+
+### Constraining likelihood functions MuSSE version
+
+We constrain our MuSSE likelihood functions using the R function `constrainMuSSE`. It has a series of arguments that allow for realistic models of chromosome evolution.  The default settings for the functions is to fit the most complex model with all possible transitions shown in figure one estimated seperately.  The table below details the arguments that can be used to simplify this full model.
+
+Argument    |Effect
+------------|------------------------------------------
+hyper       |when set to `FALSE` the binary state is ignored so only a single rate of gain, loss, demiploidy, and polyploidy are possible
+polyploidy  |if set to `TRUE` the the hyper state that is evaluated is polyploidy this means that transition from state 1 to state 2 in the binary character also double the chromosome number
+s.lambda    |if set to `TRUE` then a single lambda (speciation rate) is estimated 
+s.mu        |if set to `TRUE` then a single mu (extinction rate) is estimated
+constrain   |is given a list with any of the 5 additional constraint descriptions given below
+            |
+drop.poly   |if set to `TRUE` then the rate of polyploidy is set to zero
+drop.demi   |if set to `TRUE` then the rate of demiploidy is set to zero
+symmetric   |if set to `TRUE` then the rates estimated in the two binary states are forced to be equal
+nometa      |if set to `TRUE` then the binary state is ignored
+meta="ARD"  |can be set to "ARD" or "SYM" to describe wether q12 and q21 are the same or different
+
+
+As an example lets take are full MuSSE likelihood function created by diversitree.  Diversitree assumes no model of evolution so every transition is given a unique rate.  This leads to an enormous number of parameters in this case `r length(argnames(lik2))`.  Lets reduce this down by building a model where only increase, decrease by one, polyploidy, speciation and extinction are estimated.  All other kinds of transitions will be set to a rate of zero (e.g. no transitions from 7 chromosomes to 10).
+
+```{r}
+con.lik2 <- constrainMuSSE(data = dat.mat2,
+                           lik = lik2,
+                           polyploidy = F,
+                           constrain = list(drop.demi = T,
+                                            drop.poly= F,
+                                            nometa= T))
+# lets check and see what we have done by looking at the 
+# parameters in are new likelihood model.
+argnames(con.lik2)
+```
+
+
+
+
+
+

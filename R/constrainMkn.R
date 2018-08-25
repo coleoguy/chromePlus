@@ -17,12 +17,16 @@
 # can additional constraints can be added after this
 # function by using the normal constrain approach
 
-constrainMkn <- function(data, lik, hyper = T, polyploidy = T, equal.rates = F, 
-                         verbose=F, constrain=list(drop.poly=F, 
-                                                   drop.demi=F,
-                                                   symmetric=F, 
-                                                   nometa=F, 
-                                                   meta="ARD")){
+constrainMkn <- function(data, 
+                         lik, 
+                         hyper = T, 
+                         polyploidy = F, 
+                         verbose=F, 
+                         constrain=list(drop.poly=F,
+                                        drop.demi=F,
+                                        symmetric=F,
+                                        nometa=F,
+                                        meta="ARD")){
   # This fills out the list of constraints the default are no constraints
   if(length(constrain) < 5){
     if(is.null(constrain$drop.pol)) constrain$drop.poly=F

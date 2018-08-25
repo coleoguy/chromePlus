@@ -8,7 +8,7 @@ Maintainer: Heath Blackmon <coleoguy@gmail.com>
 Description: Implements models of chromosome evolution similar to chromevol using mkn and MuSSE models in diversitree.
 License: GPL (>= 2)
 URL: https://github.com/coleoguy/chromePlus
-Imports: diversitree
+Imports: diversitree, ape
 Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr
