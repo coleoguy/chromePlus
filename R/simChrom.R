@@ -155,15 +155,6 @@ simChrom <- function(tree, pars, limits, model){
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
   diag(q) <- 0
   diag(q) <- -rowSums(q)
   
@@ -182,7 +173,7 @@ simChrom <- function(tree, pars, limits, model){
 
     # under the chromRate model things are bit more complex and have
     # to be converted back to chromosome number and binary state
-    if(model == "ChromTrait"){
+    if(model == "ChromPlus"){
       # for chromRate we need to return two vectors
       # 1) binary state 
       b.state <- rep(0, length(dsims))
