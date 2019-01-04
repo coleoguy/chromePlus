@@ -66,8 +66,6 @@ constrainMkn <- function(data,
   if(hyper == F){
     print("Constraining model to simple chromevol version")
     for(i in 1:(nrow(parMat) - 1)){
-      parMat[i, (i + 1)] <- 1 #ascending aneuploidy
-      parMat[(i + 1), i] <- 2 #descending aneuploidy
       if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms == (chroms[i] * 2))] <- 5 #polyploidy
       if(constrain$drop.demi == F){
         if((ceiling(chroms[i] * 1.5)) <= max(chroms)){
@@ -76,6 +74,8 @@ constrainMkn <- function(data,
           if(x %% 1 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- 11 #demiploidy state 1 odd
         }
       }
+      parMat[i, (i + 1)] <- 1 #ascending aneuploidy
+      parMat[(i + 1), i] <- 2 #descending aneuploidy
     }
   }
   
