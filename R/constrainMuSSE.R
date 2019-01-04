@@ -71,14 +71,14 @@ constrainMuSSE <- function(data,
   if(hyper==F){
     print("Constraining model to simple chromevol version")
     for(i in 1:(nrow(parMat) - 1)){
-      parMat[i, (i + 1)] <- 1 #ascending aneuploidy
-      parMat[(i + 1), i] <- 2 #descending aneuploidy
       if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms==(chroms[i]*2))] <- 5 #polyploidy
       if((ceiling(chroms[i] * 1.5)) <= max(chroms)){
         x <- chroms[i] * 1.5
         if(x %% 1 == 0)  parMat[i, which(chroms==x)] <- 10 #demiploidy state1 even
         if(x %% 1 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- 11 #demiploidy state 1 odd
       }
+      parMat[i, (i + 1)] <- 1 #ascending aneuploidy
+      parMat[(i + 1), i] <- 2 #descending aneuploidy
     }
     # currently this has the issue of missing polyploidy for q12 should only be an issue when low chrom number is 1
     # this transition should be = ascending + polyploidy this should
@@ -89,8 +89,6 @@ constrainMuSSE <- function(data,
     print("Constraining model where ploidy is a meta state and different rates of chromosome evolution are possible based on being polyploid or diploid")
     # diploid rates
     for(i in 1:(split - 1)){
-      parMat[i, (i + 1)] <- 1 #ascending aneuploidy - diploids
-      parMat[(i + 1), i] <- 2 #descending aneuploidy - diploids
       if((chroms[i] * 2) <= max(chroms)) parMat[i, (which(chroms[i] * 2 == chroms) + split)] <- 5 #polyploidy-1
       # demiploidy
       if((ceiling(chroms[i] * 1.5)) <= max(chroms)){
@@ -98,11 +96,11 @@ constrainMuSSE <- function(data,
         if(x %% 1 == 0)  parMat[i, (which(chroms==x) + split)] <- 10 #demiploidy state1 even
         if(x %% 1 != 0)  parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <- 11 #demiploidy state 1 odd
       }
+      parMat[i, (i + 1)] <- 1 #ascending aneuploidy - diploids
+      parMat[(i + 1), i] <- 2 #descending aneuploidy - diploids
     }
     # polyploid rates
     for(i in (split + 1):(nrow(parMat) - 1)){
-      parMat[i, (i + 1)] <- 3 #ascending aneuploidy - polyploids
-      parMat[(i + 1), i] <- 4 #descending aneuploidy - polyploids
       if((chroms[i-split] * 2) <= max(chroms)) parMat[i, (which(chroms[i-split] * 2 == chroms) + split)] <- 6 #polyploidy-2
       # demiploidy
       if((ceiling(chroms[i-split] * 1.5)) <= max(chroms)){
@@ -113,6 +111,8 @@ constrainMuSSE <- function(data,
       parMat[i, (i - split)] <- 7 #rediploidization
       # special case for last row
       if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 7 #rediploidization
+      parMat[i, (i + 1)] <- 3 #ascending aneuploidy - polyploids
+      parMat[(i + 1), i] <- 4 #descending aneuploidy - polyploids
     }
   }
   
@@ -121,8 +121,6 @@ constrainMuSSE <- function(data,
     print("Constraining model with a hyper state that may have different rates of chromsome number evolution")
     # state 1 rates
     for(i in 1:(split - 1)){
-      parMat[i, (i + 1)] <- 1 #ascending aneuploidy - 1
-      parMat[(i + 1), i] <- 2 #descending aneuploidy - 1
       if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms==(chroms[i]*2))] <- 5 #polyploidy - 1
       # demiploidy
       if((ceiling(chroms[i] * 1.5)) <= max(chroms)){
@@ -133,12 +131,12 @@ constrainMuSSE <- function(data,
       parMat[i, (i+split)] <- 8 # transitions state 1->2
       # special case for last row
       if(i == (split - 1)) parMat[(i + 1), (i + 1 + split)] <- 8 # transitions state 2->1
+      parMat[i, (i + 1)] <- 1 #ascending aneuploidy - 1
+      parMat[(i + 1), i] <- 2 #descending aneuploidy - 1
       
     }
     # state 2 rates
     for(i in (split + 1):(nrow(parMat) - 1)){
-      parMat[i, (i + 1)] <- 3 #ascending aneuploidy - 2
-      parMat[(i + 1), i] <- 4 #descending aneuploidy - 2
       if((chroms[i-split] * 2) <= max(chroms)) parMat[i, (which(chroms[i-split] * 2 == chroms) + split)] <- 6 #polyploidy-2
       # demiploidy
       if((ceiling(chroms[i-split] * 1.5)) <= max(chroms)){
@@ -149,6 +147,8 @@ constrainMuSSE <- function(data,
       parMat[i, (i - split)] <- 9 #transition state 2->1
       # special case for last row
       if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 9 # transitions state 2->1
+      parMat[i, (i + 1)] <- 3 #ascending aneuploidy - 2
+      parMat[(i + 1), i] <- 4 #descending aneuploidy - 2
     }
   }
   # we now have a matrix with a number 1-13 that matches the rates present
