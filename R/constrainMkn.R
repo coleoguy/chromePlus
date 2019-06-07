@@ -22,6 +22,7 @@ constrainMkn <- function(data,
                          hyper = T, 
                          polyploidy = F, 
                          verbose=F, 
+                         oneway = F,
                          constrain=list(drop.poly=F,
                                         drop.demi=F,
                                         symmetric=F,
@@ -202,6 +203,13 @@ constrainMkn <- function(data,
     rate.table[rate.table[, 3] == "tran21", 3] <- "tran12"
   }
   
+  
+  if(oneway == T){
+    rate.table[rate.table[, 3] == "tran21", 3] <- "0"
+  }
+  
+  
+  
   formulae <- vector(mode="character", length=nrow(rate.table))
   for(i in 1:nrow(rate.table)){
     formulae[i] <- paste("q",
@@ -211,6 +219,7 @@ constrainMkn <- function(data,
                          rate.table[i, 3],
                          collapse="", sep="")
   }
+  
 
   # lets store these in realy obvious names
   extras <- c("asc1", "desc1", 

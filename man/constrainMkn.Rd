@@ -8,7 +8,7 @@ Constrain a diversitree mkn model
 Returns a likelihood function that has been constrained to match an mkn model of chromosome evolution yielding essentially the original chromevol model.
 }
 \usage{
-constrainMkn(data, lik, hyper, polyploidy, verbose)
+constrainMkn(data, lik, hyper, polyploidy, verbose, oneway, constrain)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -26,6 +26,9 @@ This is a likelihood function created with make.mkn
 }
   \item{verbose}{
 If \code{TRUE} then a list is returned with the first element containing the likelihood function and the second containing the rate identity matrix.
+}
+  \item{oneway}{
+Default is \code{FALSE} if \code{TRUE} then transition rate from state 2 back to 1 is zero.
 }
   \item{constrain}{
 Takes a list that can include up to 4 items to create different types of constrained models.  Options are explained below in the details section.
