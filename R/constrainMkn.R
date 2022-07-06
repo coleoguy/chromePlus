@@ -27,20 +27,25 @@ constrainMkn <- function(data,
                                         drop.demi=F,
                                         symmetric=F,
                                         nometa=F,
+                                        saf.model=F,
                                         meta="ARD")){
+  
   # This fills out the list of constraints the default are no constraints
   if(length(constrain) < 5){
     if(is.null(constrain$drop.pol)) constrain$drop.poly=F
     if(is.null(constrain$drop.demi)) constrain$drop.demi=F
     if(is.null(constrain$symmetric)) constrain$symmetric=F
     if(is.null(constrain$nometa)) constrain$nometa=F
+    if(is.null(constrain$saf.model)) constrain$saf.model=F
     if(is.null(constrain$meta)) constrain$meta="ARD"
   }
+  
   ## BUILD AN EMPTY MATRIX MATCHING OUR MODEL
   # create and store variable for padding rate names
   if(ncol(data) < 100) pad <- 2
   if(ncol(data) >= 100) pad <- 3
   if(ncol(data) < 10) pad <- 1
+  
   # make the matrix of rates
   parMat <- matrix(0,ncol(data),ncol(data))
   # make the components of the rate names the column and row
@@ -113,7 +118,7 @@ constrainMkn <- function(data,
   }
   
   # MODEL 2 PLOIDY IS NOT THE HYPER STATE
-  if(hyper==T & polyploidy == F){
+  if(hyper==T & polyploidy == F & constrain$saf.model == F){
     print("Creating rate matrix for chosen chromosome model")
     # state 1 rates
     for(i in 1:(split - 1)){
@@ -127,7 +132,7 @@ constrainMkn <- function(data,
       
       parMat[i, (i+split)] <- 8 # transitions state 1->2
       # special case for last row
-      if(i == (split - 1)) parMat[(i + 1), (i + 1 + split)] <- 8 # transitions state 2->1
+      if(i == (split - 1)) parMat[(i + 1), (i + 1 + split)] <- 8 # transitions state 1->2
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy - 1
       parMat[(i + 1), i] <- 2 #descending aneuploidy - 1
     }
@@ -148,11 +153,49 @@ constrainMkn <- function(data,
     }
   }
   
+  # MODEL 3 SAF IS HYPER STATE
+  if(hyper==T & polyploidy == F & constrain$saf.model == T){
+    print("Creating rate matrix for chosen chromosome model")
+    # state 1 rates
+    for(i in 1:(split - 1)){
+      if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms==(chroms[i]*2))] <- 5 #polyploidy - 1
+      # demiploidy
+      if((ceiling(chroms[i] * 1.5)) <= max(chroms)){
+        x <- chroms[i] * 1.5
+        if(x %% 1 == 0)  parMat[i, which(chroms==x)] <- 10 #demiploidy state1 even
+        if(x %% 1 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- 11 #demiploidy state 1 odd
+      }
+      
+      if(i > 1){
+        parMat[i, (i+split-1)] <- 14 # transitions state 1->2 (SAF)
+      }
+      # special case for last row
+      if(i == (split - 1)) parMat[(i + 1), (i + split)] <- 14 # transitions state 1->2 (SAF)
+      parMat[i, (i + 1)] <- 1 #ascending aneuploidy - 1
+      parMat[(i + 1), i] <- 2 #descending aneuploidy - 1
+    }
+    # state 2 rates
+    for(i in (split + 1):(nrow(parMat) - 1)){
+      if((chroms[i-split] * 2) <= max(chroms)) parMat[i, (which(chroms[i-split] * 2 == chroms) + split)] <- 6 #polyploidy-2
+      # demiploidy
+      if((ceiling(chroms[i-split] * 1.5)) <= max(chroms)){
+        x <- chroms[i-split] * 1.5
+        if(x %% 1 == 0)  parMat[i, (which(chroms==x) + split)] <- 12 #demiploidy state1 even
+        if(x %% 1 != 0)  parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <- 13 #demiploidy state 2 odd
+      }
+      parMat[i, (i - split)] <- 15 #transition state 2->1
+      # special case for last row
+      if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 15 # transitions state 2->1
+      parMat[i, (i + 1)] <- 3 #ascending aneuploidy - 2
+      parMat[(i + 1), i] <- 4 #descending aneuploidy - 2
+    }
+  }
+  
   rate.table <- as.data.frame(matrix(,nrow(parMat) * ncol(parMat), 3))
   rate.table[, 1] <- rep(as.character(row.names(parMat)), each=ncol(parMat))
   rate.table[, 2] <- rep(as.character(colnames(parMat)), nrow(parMat))
   rate.table[, 3] <- as.character(c(t(parMat)))
-  rate.table <- rate.table[rate.table[, 1] != rate.table[2], ]
+  rate.table <- rate.table[rate.table[, 1] != rate.table[, 2], ]
   
   rate.table[rate.table[, 3] == 1, 3] <- "asc1"
   rate.table[rate.table[, 3] == 2, 3] <- "desc1"
@@ -167,6 +210,9 @@ constrainMkn <- function(data,
   rate.table[rate.table[, 3] == 11, 3] <- ".5*dem1"
   rate.table[rate.table[, 3] == 12, 3] <- "dem2"
   rate.table[rate.table[, 3] == 13, 3] <- ".5*dem2"
+  rate.table[rate.table[, 3] == 14, 3] <- "tranSAF"
+  rate.table[rate.table[, 3] == 15, 3] <- "tranRo"
+  
   
   if(constrain$nometa == T){
     rate.table[rate.table[, 3] == "asc2", 3] <- "asc1"
@@ -187,7 +233,7 @@ constrainMkn <- function(data,
     rate.table[rate.table[, 3] == "dem2", 3] <- "0"
     rate.table[rate.table[, 3] == ".5*dem2", 3] <- "0"
   }
-
+  
   if(constrain$symmetric == T){
     rate.table[rate.table[, 3] == "desc1", 3] <- "asc1"
     rate.table[rate.table[, 3] == "desc2", 3] <- "asc2"
@@ -203,12 +249,20 @@ constrainMkn <- function(data,
     rate.table[rate.table[, 3] == "tran21", 3] <- "tran12"
   }
   
+  if(constrain$saf.model == T){
+    rate.table[rate.table[, 3] == "asc2", 3] <- "asc1"
+    rate.table[rate.table[, 3] == "desc2", 3] <- "desc1"
+    rate.table[rate.table[, 3] == "pol1", 3] <- "0"
+    rate.table[rate.table[, 3] == "pol2", 3] <- "0"
+    rate.table[rate.table[, 3] == "dem1", 3] <- "0"
+    rate.table[rate.table[, 3] == ".5*dem1", 3] <- "0"
+    rate.table[rate.table[, 3] == "dem2", 3] <- "0"
+    rate.table[rate.table[, 3] == ".5*dem2", 3] <- "0"
+  }
   
   if(oneway == T){
     rate.table[rate.table[, 3] == "tran21", 3] <- "0"
   }
-  
-  
   
   formulae <- vector(mode="character", length=nrow(rate.table))
   for(i in 1:nrow(rate.table)){
@@ -220,13 +274,14 @@ constrainMkn <- function(data,
                          collapse="", sep="")
   }
   
-
+  
   # lets store these in realy obvious names
   extras <- c("asc1", "desc1", 
               "asc2", "desc2", 
               "pol1", "pol2", 
               "redip", "tran12", "tran21", 
-              "dem1", "dem2")
+              "dem1", "dem2",
+              "tranSAF","tranRo")
   
   lik.con <- constrain(lik, formulae=formulae, extra=extras)
   colnames(parMat) <- rownames(parMat) <- colnames(data)
@@ -237,5 +292,6 @@ constrainMkn <- function(data,
   } 
   if(verbose==F) return(lik.con)
 }
+
 
 
