@@ -31,7 +31,7 @@ If \code{TRUE} then a list is returned with the first element containing the lik
 Default is \code{FALSE} if \code{TRUE} then transition rate from state 2 back to 1 is zero.
 }
   \item{constrain}{
-Takes a list that can include up to 4 items to create different types of constrained models.  Options are explained below in the details section.
+Takes a list that can include up to 6 items to create different types of constrained models.  Options are explained below in the details section.
 }
 
 }
@@ -50,6 +50,8 @@ If the rate identity matrix is returned rates are indicated by the numbers:
 \cr rate11 demipolyploidy for state1 - odd
 \cr rate12 demipolyploidy for state2 - even
 \cr rate13 demipolyploidy for state2 - odd
+\cr rate14 sex chromosome - autosome fusions (transitions from hyperstate 1 to 2)
+\cr rate15 Ro transitions (transitions from hyperstate 2 to 1)
 \cr 
 \cr 
 \cr 
@@ -69,6 +71,11 @@ The argument \code{constrain} can contain any of the items listed below.  The de
 \cr 
 \cr \code{meta="ARD"}
 \cr Can be set as either \code{"ARD"} or \code{"SYM"} these have the same meanings as \code{ace} in the APE package.
+\cr
+\cr \code{saf.model=F}
+\cr Models transitions between hyperstates as sex chromosome-autosome fusions
+(1 -> 2) and Ro transitions (2 -> 1). Follows model described in Anderson et al.
+2020.
 \cr
 
 }
