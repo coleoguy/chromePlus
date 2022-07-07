@@ -73,7 +73,7 @@ The argument \code{constrain} can contain any of the items listed below.  The de
 \cr Can be set as either \code{"ARD"} or \code{"SYM"} these have the same meanings as \code{ace} in the APE package.
 \cr
 \cr \code{saf.model=F}
-\cr Models transitions between hyperstates as sex chromosome-autosome fusions and Ro (1->2) transitions (2 -> 1). Follows model described in Anderson et al. 2020.
+\cr Models transitions between hyperstates as sex chromosome-autosome fusions (1 -> 2) and Ro transitions (2 -> 1). Follows model described in Anderson et al. 2020.
 \cr
 
 }
