@@ -283,6 +283,12 @@ constrainMkn <- function(data,
               "dem1", "dem2",
               "tranSAF","tranRo")
   
+  #Edit parameter matrix to match rate table
+  for(i in 1:nrow(rate.table)){
+    parMat[paste0("",rate.table[i,1],""),paste0("",rate.table[i,2],"")] <- 
+      rate.table[i,3]
+  }
+  
   lik.con <- constrain(lik, formulae=formulae, extra=extras)
   colnames(parMat) <- rownames(parMat) <- colnames(data)
   if(verbose==T){
@@ -292,6 +298,4 @@ constrainMkn <- function(data,
   } 
   if(verbose==F) return(lik.con)
 }
-
-
 
