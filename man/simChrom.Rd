@@ -4,7 +4,7 @@
 \title{simulates chromosome number data
 }
 \description{
-Provides a simulation of chromosome number evolution based on tree and one of 3 models.  This function uses diversitrees sim.character to perform simulation.
+Provides a simulation of chromosome number evolution based on tree and one of 4 models or a user provided q-matrix.  This function uses diversitrees sim.character to perform simulation.
 }
 \usage{
 simChrom(tree, pars, limits, model)
@@ -18,10 +18,13 @@ a phylogenetic tree of the class phylo
 numeric vector of paramters the length of this vector depends on the model specified see details below
 }
   \item{limits}{
-numeric vector of length 2 with upper and lower limit for chromosome number
+numeric vector of length 2 with upper and lower limit for chromosome number. Defaults to NULL
 }
   \item{model}{
-A text string indicating the model for the simulation.  Options are "2010", "ChromTrait", or "PloidEvol"
+A text string indicating the model for the simulation.  Options are "2010", "ChromPlus", "PloidEvol", or "SAF". Defaults to NULL 
+}
+  \item{Qmat}{
+A user provided q-matrix which describes the desired model of chromosome evolution. Transitions should be filled in with desired rates. Diagonals and rowsums will automatically be set to equal 0. Function currently doesn't support user provided q-matrices with hyperstates. Defaults to NULL
 }
 }
 \details{
@@ -60,9 +63,12 @@ If model="PloidEvol" then the numeric vector supplied to pars should be length 1
 \cr rediploidization
 \cr chromosome number at the root of the tree. 
 \cr ploidy level at the root of the tree (0=diploid, 1=polyploid)
+\cr \cr \cr
+If model=NLL then the numeric vector supplied to pars should be length 1:
+\cr chromosome number at the root of the tree.
 }
 \value{
-a named numeric vector representing chromosome numbers at the tips of the tree is returned for model="2010". For model="chromRate" and model="ploidEvol" a list of length 2 is returned containing the a vector of chromosome numbers for tips of the tree as well as a vector containing the hyperstate or ploidy for each tip.
+a named numeric vector representing chromosome numbers at the tips of the tree is returned for model="2010" and model=NULL. For model="ChromPlus" and model="PloidEvol" a list of length 2 is returned containing the a vector of chromosome numbers for tips of the tree as well as a vector containing the hyperstate or ploidy for each tip.
 }
 \references{
 %% ~put references to the literature/web site here ~
