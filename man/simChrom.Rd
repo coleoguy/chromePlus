@@ -52,7 +52,7 @@ If model="ChromPlus" or "SAF" then the numeric vector supplied to pars should be
 \cr transition from hyperstate/fusion state 1 to 2 
 \cr transition from hyperstate/fusion state 2 to 1 
 \cr chromosome number at the root of the tree
-\cr hyperstate/fusion state at the root of the tree (1 or 2)
+\cr hyperstate/fusion state at the root of the tree (0=hyperstate 1/unfused, 1 =hyperstate 2/fused)
 \cr \cr \cr 
 If model="PloidEvol" then the numeric vector supplied to pars should be length 11: 
 \cr chromosome gain in diploids 
