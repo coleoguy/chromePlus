@@ -238,7 +238,7 @@ simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL, verbo
   
   # simulate the chromosome numbers
   print("performing simulation")
-  dsims <- sim.character(tree.test, pars=q, x0=root, model="mkn")
+  dsims <- sim.character(tree, pars=q, x0=root, model="mkn")
   attr(dsims, "node.state") <- NULL
   # save the names for various uses below
   tips <- names(dsims)
