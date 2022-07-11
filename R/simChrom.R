@@ -76,10 +76,11 @@ simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL, verbo
     q <- parMat 
     if(pars[12] == 0){
       root <- as.numeric(colnames(q)[which(limits[1]:limits[2] == pars[11])])
-    }
-    if(pars[12] == 1){
+    } else if(pars[12] == 1){
       x <- length(limits[1]:limits[2]) + which(limits[1]:limits[2] == pars[11])
       root <- as.numeric(colnames(q)[x])
+    } else {
+      stop("ancestral binary state not recognied")
     }
   }
 
@@ -145,10 +146,11 @@ simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL, verbo
     q <- parMat 
     if(pars[11] == 0){
       root <- as.numeric(colnames(q)[which(limits[1]:limits[2] == pars[10])])
-    }
-    if(pars[11] == 1){
+    } else if(pars[11] == 1){
       x <- length(limits[1]:limits[2]) + which(limits[1]:limits[2] == pars[10])
       root <- as.numeric(colnames(q)[x])
+    } else {
+      stop("ancestral ploidy state not recognied")
     }
   }
   
@@ -199,10 +201,11 @@ simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL, verbo
     q <- parMat 
     if(pars[12] == 0){
       root <- as.numeric(colnames(q)[which(limits[1]:limits[2] == pars[11])])
-    }
-    if(pars[12] == 1){
+    } else if(pars[12] == 1){
       x <- length(limits[1]:limits[2]) + which(limits[1]:limits[2] == pars[11])
       root <- as.numeric(colnames(q)[x])
+    } else {
+      stop("ancestral fusion state not recognied")
     }
   }
   
