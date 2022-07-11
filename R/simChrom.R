@@ -1,10 +1,11 @@
-simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL){
+simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL, verbose = F){
   # args: tree, pars, limits
   # tree: phylo object
   # pars: c(gain[1:2], loss[1:2], demi[1:2], poly[1:2], root)
-  # limits: c(low, high)
+  # limits: c(low, high), NULL
   # model: "2010", "ChromTrait", "PloidEvol", "SAF", NULL
   # Qmat: NULL (default) or user supplied Q-matrix
+  # verbose: option to return parameter matrix
 
   if(is.null(model)==F && model == "2010"){
     print("building q-matrix")
@@ -245,7 +246,14 @@ simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL){
   # chromosome numbers so we can just use them
   if(model == "2010" || is.null(model)==T){
     dsims[] <- as.numeric(colnames(q)[dsims])
-    return(dsims)
+    #Check if parameter matrix is returned
+    if(verbose == T){
+      result.list <- list(dsims, parMat)
+      names(result.list) <- c("chrom.num", "parameter.matrix")
+      return(result.list)
+    } else {
+      return(dsims)
+    }
   } 
   
   # under the ChromPlus model things are bit more complex and have
@@ -260,9 +268,17 @@ simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL){
     
     # 2) chromosome number
     dsims[] <- c(chroms, chroms)[dsims]
-    result <- list(b.state, dsims)
-    names(result) <- c("binary.state", "chrom.num")
-    return(result)
+    
+    #Check if parameter matrix is returned
+    if(verbose == T){
+      result <- list(b.state,dsims,parMat)
+      names(result) <- c("binary.state", "chrom.num","parameter.matrix")
+      return(result)
+    } else {
+      result <- list(b.state,dsims)
+      names(result)<- c("binary.state","chrom.num")
+      return(result)
+    }
   } 
   
   # under the PloidEvol model things are bit more complex and have
@@ -277,9 +293,17 @@ simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL){
     
     # 2) chromosome number
     dsims[] <- c(chroms, chroms)[dsims]
-    result <- list(b.state, dsims)
-    names(result) <- c("ploidy.state", "chrom.num")
-    return(result)
+    
+    #Check if parameter matrix is returned
+    if(verbose == T){
+      result <- list(b.state,dsims,parMat)
+      names(result) <- c("ploidy.state", "chrom.num","parameter.matrix")
+      return(result)
+    } else {
+      result <- list(b.state,dsims)
+      names(result)<- c("ploidy.state","chrom.num")
+      return(result)
+    }
   } 
   
   # under the SAF model things are bit more complex and have
@@ -294,8 +318,16 @@ simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL){
     
     # 2) chromosome number
     dsims[] <- c(chroms, chroms)[dsims]
-    result <- list(b.state, dsims)
-    names(result) <- c("fusion.state", "chrom.num")
-    return(result)
+    
+    
+    if(verbose == T){
+      result <- list(b.state,dsims,parMat)
+      names(result) <- c("fusion.state", "chrom.num","parameter.matrix")
+      return(result)
+    } else {
+      result <- list(b.state,dsims)
+      names(result)<- c("fusion.state","chrom.num")
+      return(result)
+    }
   } 
 }
