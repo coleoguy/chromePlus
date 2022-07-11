@@ -26,7 +26,7 @@ A text string indicating the model for the simulation.  Options are "2010", "Chr
   \item{Qmat}{
 A user provided q-matrix which describes the desired model of chromosome evolution. Transitions should be filled in with desired rates. Diagonals and rowsums will automatically be set to equal 0. Function currently doesn't support user provided q-matrices with hyperstates. Defaults to NULL
 }
-  \iten{verbose}{
+  \item{verbose}{
 Binary argument giving whether or not to return parameter matrix used to build model. Defaults to FALSE  
 }
 }
