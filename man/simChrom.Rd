@@ -7,7 +7,7 @@
 Provides a simulation of chromosome number evolution based on tree and one of 4 models or a user provided q-matrix.  This function uses diversitrees sim.character to perform simulation.
 }
 \usage{
-simChrom(tree, pars, limits, model)
+simChrom(tree, pars, limits, model, Qmat, verbose)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
