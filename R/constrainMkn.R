@@ -292,8 +292,8 @@ constrainMkn <- function(data,
   lik.con <- constrain(lik, formulae=formulae, extra=extras)
   colnames(parMat) <- rownames(parMat) <- colnames(data)
   if(verbose==T){
-    result.list <- list(lik.con, parMat)
-    names(result.list) <- c("likelihood function", "parameter matrix")
+    result.list <- list(lik.con, parMat, rate.table)
+    names(result.list) <- c("likelihood function", "parameter matrix", "ratetable")
     return(result.list)
   } 
   if(verbose==F) return(lik.con)
