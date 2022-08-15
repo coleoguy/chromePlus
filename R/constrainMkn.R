@@ -283,6 +283,7 @@ constrainMkn <- function(data,
               "dem1", "dem2",
               "tranSAF","tranRo")
   
+  # TODO This is still not working quite right
   #Edit parameter matrix to match rate table
   for(i in 1:nrow(rate.table)){
     parMat[paste0("",rate.table[i,1],""),paste0("",rate.table[i,2],"")] <- 
@@ -291,6 +292,7 @@ constrainMkn <- function(data,
   
   lik.con <- constrain(lik, formulae=formulae, extra=extras)
   colnames(parMat) <- rownames(parMat) <- colnames(data)
+  
   if(verbose==T){
     result.list <- list(lik.con, parMat, rate.table)
     names(result.list) <- c("likelihood function", "parameter matrix", "ratetable")
