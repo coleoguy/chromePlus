@@ -2,18 +2,16 @@
 # 19 December
 # This code is a function that creates a density plot of ChromPlus data 
 
-library(ggplot2)
-library(coda)
 
-plot.chromeplus <- function(data = NULL,
-                            poly = FALSE,
-                            colors = NULL,
-                            x_title = NULL,
-                            y_title = "density",
-                            main_title = NULL,
-                            legend_title = "parameters",
-                            alpha_geom = 0.75,
-                            alpha_line = 0.75){
+plotChromeplus <- function(data = NULL,
+                           poly = FALSE,
+                           colors = NULL,
+                           x_title = NULL,
+                           y_title = "density",
+                           main_title = NULL,
+                           legend_title = "parameters",
+                           alpha_geom = 0.75,
+                           alpha_line = 0.75){
   ### --- define inputs --- ###
   # data: A data frame containing results returned from ChromePlus.
   # poly: A logical vector of length one. TRUE indicates the model includes 
@@ -87,7 +85,7 @@ plot.chromeplus <- function(data = NULL,
                              types = rep(c("fission", "fusion"), each = 2))
     
     ### --- plot --- ###
-    ggplot(long_data, aes(x=rate)) +
+    pplot <- ggplot(long_data, aes(x=rate)) +
     geom_density(aes(fill=as.factor(type),
                      y=..density..),
                  stat="density", 
@@ -128,7 +126,7 @@ plot.chromeplus <- function(data = NULL,
                            types = rep(c("fission", "fusion", "wgd"), each = 2))
     
     ### --- plot --- ###
-    ggplot(long_data, aes(x=rate)) +
+    pplot <- ggplot(long_data, aes(x=rate)) +
       geom_density(aes(fill=as.factor(type),
                        y=..density..),
                    stat="density", 
@@ -152,4 +150,5 @@ plot.chromeplus <- function(data = NULL,
            y = c(y_title)) +
       ggtheme
   }
+  return(pplot)
 }

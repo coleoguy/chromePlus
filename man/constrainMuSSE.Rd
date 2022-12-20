@@ -8,7 +8,9 @@ Constrain a diversitree MuSSE model
 Returns a likelihood function that has been constrained to match an MuSSE model of chromosome evolution yielding essentially the original chromevol model.
 }
 \usage{
-constrainMuSSE <- function(data, lik, hyper, s.lambda, s.mu, polyploidy, verbose, constrain)
+constrainMuSSE <- function(data, lik, hyper, 
+                           s.lambda, s.mu, polyploidy, 
+                           verbose, constrain)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -86,19 +88,6 @@ The argument \code{constrain} can contain any of the items listed below.  The de
 \value{
 constrained likelihood function is returned
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
+
 \author{
 Heath Blackmon}
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
-\examples{
-}

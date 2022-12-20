@@ -25,19 +25,6 @@ If `TRUE` model will include a binary hyper state (col 3 of input data) that can
 \value{
 a probability matrix is returned
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
+
 \author{
 Heath Blackmon}
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
-\examples{
-}

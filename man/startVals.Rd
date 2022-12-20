@@ -30,26 +30,12 @@ the standard deviation of the distribution
   \item{dist}{
 the distribution to be used currently just "norm" or "unif"
 }
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
-\value{
+
+  \value{
 constrained likelihood function is returned
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
-\author{
-Heath Blackmon}
-\note{
-%%  ~~further notes~~
+
+  \author{
+Heath Blackmon
 }
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
-\examples{
-}

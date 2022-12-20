@@ -73,20 +73,10 @@ If model=NULL then the numeric vector supplied to pars should be length 1:
 \value{
 a named numeric vector representing chromosome numbers at the tips of the tree is returned for model="2010" and model=NULL. For model="ChromPlus", model="PloidEvol", and model="SAF" a list of length 2 is returned containing a vector of chromosome numbers for tips of the tree as well as a vector containing the hyperstate or ploidy for each tip. If verbose=T, the parameter matrix used to simulate the data is also returned.
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
+
 \author{
 Heath Blackmon}
-\note{
-%%  ~~further notes~~
-}
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{
 simChrom(trees, pars=c(.2, .2, .2, .2, 10),
          limits = c(1, 100), model = "2010")         
