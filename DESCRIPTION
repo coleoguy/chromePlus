@@ -3,12 +3,12 @@ Type: Package
 Title: Analysis of chromosome number evolution and binary traits
 Version: 0.0.0
 Date: 2016-03-16
-Author: Heath Blackmon, Emma Goldberg, Itay Mayrose
+Author: Michelle M. Jonika, Heath Blackmon, Emma Goldberg, Itay Mayrose
 Maintainer: Heath Blackmon <coleoguy@gmail.com>
 Description: Implements models of chromosome evolution similar to chromevol using mkn and MuSSE models in diversitree.
 License: GPL (>= 2)
 URL: https://github.com/coleoguy/chromePlus
-Imports: diversitree, ape
+Imports: diversitree, ape, ggplot2, coda
 Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr

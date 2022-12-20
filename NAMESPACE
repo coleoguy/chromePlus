@@ -4,5 +4,8 @@ export(datatoMatrix)
 export(simChrom)
 export(startVals)
 export(makeSSEchrom)
+export(plot.chromeplus)
 importFrom(diversitree, find.mle, make.mkn, constrain, sim.character, tree.musse)
+importFrom(ggplot2, theme_bw, theme, ggplot, geom_density, geom_line, geom_vline, scale_color_manual, scale_fill_manual, guides, labs)
+importFrom(coda, as.mcmc, HPDinterval)
 
