@@ -59,8 +59,7 @@ plot.chromeplus <- function(data = NULL,
     } 
   }
   
-  
-  
+  ### --- set up plotting theme --- ###
   
   #set up ggplot theme for the plot
   ggtheme <- theme_bw() + theme(panel.grid.major = element_blank(),
@@ -69,7 +68,7 @@ plot.chromeplus <- function(data = NULL,
                                 panel.border=element_blank(),
                                 axis.line = element_line(colour="grey30"),
                                 axis.title = element_text(colour="grey20"),
-                                axis.text = (element_text(colour="grey30")),
+                                axis.text = element_text(colour="grey30"),
                                 legend.title = element_text(colour="grey20"),
                                 legend.text = element_text(colour="grey30"))
   
