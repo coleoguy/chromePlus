@@ -36,9 +36,7 @@ plotChromeplus <- function(data = NULL,
     colnum <- ncol(data)
     colors <- viridis(colnum)
   }
-  if(length(colors) == ncol(data)){
-      print("Correct number of supplied colors for the given number of parameters.")
-    } else{
+  if(length(colors) != ncol(data)){
       stop("\n Please check the number of supplied colors for the given number 
            of parameters.")
     } 
@@ -84,7 +82,6 @@ plotChromeplus <- function(data = NULL,
                  stat="density", 
                  position="identity", 
                  alpha = c(alpha_geom)) +
-      ylim(min(HPDs$Y))+
     geom_line(data=HPDs, 
               aes(x=X, y=Y, color=as.factor(rate)),
               alpha = c(alpha_line), 
