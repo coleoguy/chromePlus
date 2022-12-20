@@ -4,7 +4,6 @@
 
 
 plotChromeplus <- function(data = NULL,
-                           poly = FALSE,
                            colors = NULL,
                            x_title = NULL,
                            y_title = "density",
@@ -33,33 +32,19 @@ plotChromeplus <- function(data = NULL,
   ### --- perform checks --- ###
   #check the number of colors supplied by the user dependent on the number of
   #parameters
-  
-  #store the number of colors supplied 
-  check <- length(colors)
-  
-  #loop to check that if there is not polyploidy, there should be two colors
-  if(poly == FALSE){
-    if(check == 2){
+  if(is.null(colors)){
+    colnum <- ncol(data)
+    colors <- viridis(colnum)
+  }
+  if(length(colors) == ncol(data)){
       print("Correct number of supplied colors for the given number of parameters.")
     } else{
       stop("\n Please check the number of supplied colors for the given number 
            of parameters.")
     } 
-  }
-  
-  #loop to check that if there is polyploidy, there should be three colors
-  if(poly == TRUE){
-    if(check == 3){
-      print("Correct number of supplied colors for the given number of parameters.")
-    } else{
-      stop("\n Please check the number of supplied colors for the given number 
-           of parameters.")
-    } 
-  }
-  
+
   ### --- set up plotting theme --- ###
-  
-  #set up ggplot theme for the plot
+ #set up ggplot theme for the plot
   ggtheme <- theme_bw() + theme(panel.grid.major = element_blank(),
                                 panel.grid.minor = element_blank(),
                                 panel.background = element_blank(),
@@ -69,32 +54,41 @@ plotChromeplus <- function(data = NULL,
                                 axis.text = element_text(colour="grey30"),
                                 legend.title = element_text(colour="grey20"),
                                 legend.text = element_text(colour="grey30"))
+  # get the range of values that we will be plotting on our Y axis
+  getMax <- function(x){
+    max(density(x)$y)
+  }
+  maxy <- max(apply(data, MARGIN=2,FUN=getMax))
   
-  if(poly == FALSE){
+  
     ### --- create long data for ggplot --- ###
-    long_data <- data.frame(c(data$asc2 - data$asc1,
-                              data$desc2 - data$desc1),
-                            rep(c("fission", "fusion"), 
-                                each = nrow(data)))
+    long_data <- data.frame(c(as.numeric(unlist(data))),
+                            rep(colnames(data), each = nrow(data)))
     colnames(long_data) <- c("rate", "type")
     
     ### --- calculate HPD intervals --- ###
-    hpd_wopoly <- data.frame(X = c(HPDinterval(as.mcmc(long_data$rate[long_data$type=="fission"]))[1,],
-                                   HPDinterval(as.mcmc(long_data$rate[long_data$type=="fusion"]))[1,]),
-                             Y = c(-1, -1, -2, -2),
-                             types = rep(c("fission", "fusion"), each = 2))
+    myHPD <- function(x){
+      HPDinterval(as.mcmc(x))
+    }
+    HPDs <- apply(data, MARGIN = 2, FUN=myHPD)
     
+    HPDs <- data.frame(as.numeric(unlist(as.data.frame(HPDs))),
+                       rep(-1:(-ncol(HPDs)), each=2),
+                       rep(colnames(HPDs), each=2))
+    colnames(HPDs) <-c("X","Y","rate")
+    HPDs$Y <- HPDs$Y * .03*maxy
     ### --- plot --- ###
     pplot <- ggplot(long_data, aes(x=rate)) +
     geom_density(aes(fill=as.factor(type),
-                     y=..density..),
+                     y=after_stat(density)),
                  stat="density", 
                  position="identity", 
                  alpha = c(alpha_geom)) +
-    geom_line(data=hpd_wopoly, 
-              aes(x=X, y=Y, color=as.factor(types)),
+      ylim(min(HPDs$Y))+
+    geom_line(data=HPDs, 
+              aes(x=X, y=Y, color=as.factor(rate)),
               alpha = c(alpha_line), 
-              size=1.4, 
+              linewidth=1.6, 
               lineend="round") +
     geom_vline(xintercept=0, 
                linetype="dashed", 
@@ -107,48 +101,6 @@ plotChromeplus <- function(data = NULL,
          x = c(x_title),
          y = c(y_title)) +
     ggtheme
+    return(pplot)    
   }
   
-  if(poly == TRUE){
-    ### --- create long data for ggplot --- ###
-    long_data <- data.frame(c(data$asc2 - data$asc1,
-                              data$desc2 - data$desc1,
-                              data$pol2 - data$pol1),
-                            rep(c("fission", "fusion", "wgd"), 
-                                each = nrow(data)))
-    colnames(long_data) <- c("rate", "type")
-    
-    ### --- calculate HPD intervals --- ###
-    hpd_poly <- data.frame(X = c(HPDinterval(as.mcmc(long_data$rate[long_data$type=="fission"]))[1,],
-                                 HPDinterval(as.mcmc(long_data$rate[long_data$type=="fusion"]))[1,],
-                                 HPDinterval(as.mcmc(long_data$rate[long_data$type=="wgd"]))[1,]),
-                           Y = c(-2, -2, -4, -4, -6, -6),
-                           types = rep(c("fission", "fusion", "wgd"), each = 2))
-    
-    ### --- plot --- ###
-    pplot <- ggplot(long_data, aes(x=rate)) +
-      geom_density(aes(fill=as.factor(type),
-                       y=..density..),
-                   stat="density", 
-                   position="identity", 
-                   alpha= c(alpha_geom)) +
-      geom_line(data=hpd_poly, 
-                aes(x=X, y=Y, color=as.factor(types)),
-                alpha= c(alpha_line), 
-                size=1.4, 
-                lineend="round") +
-      geom_vline(xintercept=0, 
-                 linetype="dashed", 
-                 color="grey40", 
-                 size=.5) +
-      scale_color_manual(values = c(colors)) +
-      scale_fill_manual(values = c(colors)) +
-      guides(fill=guide_legend(title="parameter"),
-             color="none") +
-      labs(title = c(main_title),
-           x = c(x_title),
-           y = c(y_title)) +
-      ggtheme
-  }
-  return(pplot)
-}

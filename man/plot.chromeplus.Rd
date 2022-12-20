@@ -10,7 +10,7 @@ Function makes a density plot of Chroeplus results.
 plot.chromeplus(data, poly, colors, x_title, y_title, main_title, 
 legend_title, alpha_geom, alpha_line)}
 \arguments{
-  \item{data}{A data frame containing results returned from ChromePlus.}
+  \item{data}{A data frame containing results returned from ChromePlus. The first column should be the MCMC iteration number, the last column is the probability of each iteration and the }
   \item{poly}{A logical vector of length one. TRUE indicates the model includes 
   polyploidy. Default is FALSE and indicates the model does not include polyploidy}
   \item{colors}{A character vector containing hex codes for plotting. The length 
