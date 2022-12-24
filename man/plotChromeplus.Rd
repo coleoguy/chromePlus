@@ -1,13 +1,13 @@
-\name{plot.chromeplus}
-\alias{plot.chromeplus}
+\name{plotChromeplus}
+\alias{plotChromeplus}
 \title{
 Create a density plot from Chromeplus results
 }
 \description{
-Function makes a density plot of Chroeplus results.  
+Function makes a density plot of Chromeplus results.  
 }
 \usage{
-plot.chromeplus(data, poly, colors, x_title, y_title, main_title, 
+plotChromeplus(data, poly, colors, x_title, y_title, main_title, 
 legend_title, alpha_geom, alpha_line)}
 \arguments{
   \item{data}{A data frame containing results returned from ChromePlus. The first column should be the MCMC iteration number, the last column is the probability of each iteration and the }
