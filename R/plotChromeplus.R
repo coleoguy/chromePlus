@@ -13,8 +13,6 @@ plotChromeplus <- function(data = NULL,
                            alpha_line = 0.75){
   ### --- define inputs --- ###
   # data: A data frame containing results returned from ChromePlus.
-  # poly: A logical vector of length one. TRUE indicates the model includes 
-  #polyploidy. Default is FALSE and indicates the model does not include polyploidy
   # colors: A character vector containing hex codes for plotting. The length of
   #the vector is dependent on the numbers of parameters included in the model
   # x_title: The text for the x-axis title.
@@ -36,11 +34,7 @@ plotChromeplus <- function(data = NULL,
     colnum <- ncol(data)
     colors <- viridis(colnum)
   }
-  if(length(colors) != ncol(data)){
-      stop("\n Please check the number of supplied colors for the given number 
-           of parameters.")
-    } 
-
+  
   ### --- set up plotting theme --- ###
  #set up ggplot theme for the plot
   ggtheme <- theme_bw() + theme(panel.grid.major = element_blank(),
@@ -63,6 +57,12 @@ plotChromeplus <- function(data = NULL,
     long_data <- data.frame(c(as.numeric(unlist(data))),
                             rep(colnames(data), each = nrow(data)))
     colnames(long_data) <- c("rate", "type")
+    
+    #check that the approporiate number of colors is supplied
+    if(length(colors) != ncol(data)){
+      stop("\n Please check the number of supplied colors for the given number 
+           of parameters.")
+    } 
     
     ### --- calculate HPD intervals --- ###
     myHPD <- function(x){
