@@ -74,6 +74,8 @@ The argument \code{constrain} can contain any of the items listed below.  The de
 \cr
 \cr \code{saf.model=F}
 \cr Models transitions between hyperstates as sex chromosome-autosome fusions (1 -> 2) and Ro transitions (2 -> 1). Follows model described in Anderson et al. 2020.
+\cr \code{sym.hyperstates=F}
+\cr If \code{TRUE}, sets one ascendeing and descending transition rate for hyperstates one and two.
 \cr
 
 }

@@ -28,6 +28,7 @@ constrainMkn <- function(data,
                                         symmetric=F,
                                         nometa=F,
                                         saf.model=F,
+                                        sym.hyperstates=F,
                                         meta="ARD")){
   
   # This fills out the list of constraints the default are no constraints
@@ -37,6 +38,7 @@ constrainMkn <- function(data,
     if(is.null(constrain$symmetric)) constrain$symmetric=F
     if(is.null(constrain$nometa)) constrain$nometa=F
     if(is.null(constrain$saf.model)) constrain$saf.model=F
+    if(is.null(constrain$sym.hyperstates)) constrain$sym.hyperstates = F
     if(is.null(constrain$meta)) constrain$meta="ARD"
   }
   
@@ -250,14 +252,21 @@ constrainMkn <- function(data,
   }
   
   if(constrain$saf.model == T){
-    rate.table[rate.table[, 3] == "asc2", 3] <- "asc1"
-    rate.table[rate.table[, 3] == "desc2", 3] <- "desc1"
+    rate.table[rate.table[, 3] == "asc1",3] <- "asc1"
+    rate.table[rate.table[, 3] == "asc2",3] <- "asc2"
+    rate.table[rate.table[,3] == "desc1",3] <- "desc1"
+    rate.table[rate.table[,3] == "desc2",3] <- "desc2"
     rate.table[rate.table[, 3] == "pol1", 3] <- "0"
     rate.table[rate.table[, 3] == "pol2", 3] <- "0"
     rate.table[rate.table[, 3] == "dem1", 3] <- "0"
     rate.table[rate.table[, 3] == ".5*dem1", 3] <- "0"
     rate.table[rate.table[, 3] == "dem2", 3] <- "0"
     rate.table[rate.table[, 3] == ".5*dem2", 3] <- "0"
+  }
+  
+  if(constrain$sym.hyperstates == T){
+    rate.table[rate.table[, 3] == "asc2", 3] <- "asc1"
+    rate.table[rate.table[, 3] == "desc2", 3] <- "desc1"
   }
   
   if(oneway == T){
