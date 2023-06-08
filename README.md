@@ -1,4 +1,4 @@
-chomePlus
+chromePlus
 ====
 
 R package for the analysis of chromosome number evolution
