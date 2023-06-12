@@ -30,7 +30,7 @@ the standard deviation of the distribution
   \item{dist}{
 the distribution to be used currently just "norm" or "unif"
 }
-
+}
   \value{
 constrained likelihood function is returned
 }

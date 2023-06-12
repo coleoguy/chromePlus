@@ -11,7 +11,7 @@
 # polyploids: if T then an unobserved state for polypoidy
 # is created if F then basically you have the older style 
 # chromevol.
-datatoMatrix <- function(x, range=NULL, hyper = T, buffer = 4){
+datatoMatrix <- function(x, range=NULL, hyper = T, buffer = 0){
   if(sum(x[,2] != round(x[,2])) > 0){
     print("Chromosome numbers are being rounded to nearest whole number")
     x[,2] <- round(x[,2])

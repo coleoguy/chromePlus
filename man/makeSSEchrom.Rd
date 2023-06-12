@@ -60,21 +60,6 @@ When using this function you should insure that h is set high enough that it doe
 }
 \value{
 This function returns a list with three elements.  The first is the resulting phylogeny of class phylo. The second is a named vector of the binary states of the tips and the third is a named vector of haploid chromosome numbers.  
-
-}
-\references{
-%% ~put references to the literature/web site here ~
 }
 \author{
 Heath Blackmon}
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
-\examples{
-}

@@ -3,11 +3,11 @@
 # This code is a function that creates a density plot of ChromPlus data 
 
 
-plotChromeplus <- function(data = NULL,
-                           colors = NULL,
-                           x_title = NULL,
+plotChromeplus <- function(data,
+                           colors,
+                           x_title,
                            y_title = "density",
-                           main_title = NULL,
+                           main_title,
                            legend_title = "parameters",
                            alpha_geom = 0.75,
                            alpha_line = 0.75){

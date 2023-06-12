@@ -8,9 +8,9 @@ Constrain a diversitree MuSSE model
 Returns a likelihood function that has been constrained to match an MuSSE model of chromosome evolution yielding essentially the original chromevol model.
 }
 \usage{
-constrainMuSSE <- function(data, lik, hyper, 
-                           s.lambda, s.mu, polyploidy, 
-                           verbose, constrain)
+constrainMuSSE(data, lik, hyper = T, 
+               polyploidy = F, s.lambda = T, s.mu = T,
+               verbose = F, constrain)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -21,19 +21,19 @@ This is the data matrix created by running \code{dataMatrx}
 This is a likelihood function created with make.MuSSE
 }
   \item{hyper}{
-If \code{TRUE} then a binary metastate is assumed
-}
-  \item{s.lambda}{
-If \code{TRUE} a single value of lambda is assumed across metastates
-}
-  \item{s.mu}{
-If \code{TRUE} a single value of mu is assumed across metastates
+If \code{TRUE} then a binary metastate is assumed. Defaults to \code{TRUE}
 }
   \item{polyploidy}{
-If \code{TRUE} then polyploidy is assumed to be the metastate
+If \code{TRUE} then polyploidy is assumed to be the metastate. Defaults to \code{FALSE}
+}
+  \item{s.lambda}{
+If \code{TRUE} a single value of lambda is assumed across metastates. Defaults to \code{TRUE}
+}
+  \item{s.mu}{
+If \code{TRUE} a single value of mu is assumed across metastates. Defaults to \code{TRUE}
 }
   \item{verbose}{
-If \code{TRUE} then a list is returned with the first element containing the likelihood function and the second containing the rate identity matrix.
+If \code{TRUE} then a list is returned with the first element containing the likelihood function and the second containing the rate identity matrix. Defaults to \code{FALSE}
 }
   \item{constrain}{
 a list capable of carrying additional model constraints these include see details for specifications.
