@@ -13,12 +13,11 @@ http://www.tau.ac.il/~itaymay/cp/chromEvol/
 \author{
 Heath Blackmon
 }
-
 \examples{
 #get path for data file
 system.file("./inst/extdata", "chromevol.format.txt", package = "chromevolR")
 
-#get path for data file
+#get path for control file
 system.file("./inst/extdata", "params.txt", package = "chromevolR")
 }
 
