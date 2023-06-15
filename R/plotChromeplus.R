@@ -76,14 +76,14 @@ plotChromeplus <- function(data,
     colnames(HPDs) <-c("X","Y","rate")
     HPDs$Y <- HPDs$Y * .03*maxy
     ### --- plot --- ###
-    pplot <- ggplot(long_data, aes(x=rate)) +
-    geom_density(aes(fill=as.factor(type),
+    pplot <- ggplot(long_data, aes(x=long_data$rate)) +
+    geom_density(aes(fill=as.factor(long_data$type),
                      y=after_stat(density)),
                  stat="density", 
                  position="identity", 
                  alpha = c(alpha_geom)) +
     geom_line(data=HPDs, 
-              aes(x=X, y=Y, color=as.factor(rate)),
+              aes(x=HPDs$X, y=HPDs$Y, color=as.factor(HPDs$rate)),
               alpha = c(alpha_line), 
               linewidth=1.6, 
               lineend="round") +

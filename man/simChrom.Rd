@@ -77,15 +77,3 @@ a named numeric vector representing chromosome numbers at the tips of the tree i
 \author{
 Heath Blackmon}
 
-\examples{
-data("tree")
-
-simChrom(tree, pars=c(.2, .2, .2, .2, 10),
-         limits = c(1, 100), model = "2010")         
-         
-simChrom(tree, pars=c(.2, .1, .1, .2, .1, .2, .4, .05, 1,  4, 0),
-         limits = c(1, 20), model = "PloidEvol")
-         
-simChrom(tree, pars=c(.2, .4, .2, .4, .2, .4, .2, .4, 1,  1, 10, 1), 
-         limits = c(1, 100), model = "ChromPlus")
-}

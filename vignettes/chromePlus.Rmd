@@ -23,7 +23,7 @@ knitr::include_graphics("model.png", dpi=400)
 
 ## Simple model chromosome increase, decrease, and whole genome duplication only:
 
-```{r}
+```{}
 # load packages
 library(chromePlus)
 library(diversitree)
@@ -61,7 +61,7 @@ argnames(con.lik)
 
 ## Model with a binary state that impacts chromosome evolution
 
-```{r}
+```{}
 
 # load packages
 library(chromePlus)
@@ -100,7 +100,7 @@ argnames(con.lik)
 
 ## More complex model with uncertainty in tip states, different rates of chromosomes evolution, speciation, and extinction rates associated with the binary character.
 
-```{r}
+```{}
 
 # load packages
 library(chromePlus)
