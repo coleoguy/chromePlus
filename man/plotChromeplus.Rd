@@ -10,15 +10,13 @@ Function makes a density plot of Chromeplus results.
 plotChromeplus(data, colors, x_title, y_title = "density", main_title, 
 legend_title = "parameters", alpha_geom = 0.75, alpha_line = 0.75)}
 \arguments{
-  \item{data}{A data frame containing results returned from ChromePlus. The first column should be the MCMC iteration number, the last column is the probability of each iteration and the }
+  \item{data}{A data frame containing results returned from ChromePlus. The first column should be the MCMC iteration number, the last column is the probability of each iteration and the intermediate columns are the parameters included in the model.}
   \item{colors}{A character vector containing hex codes for plotting. The length 
-  of the vector is dependent on the number of parameters included in the model.}
+  of the vector should be the same as the number of parameters included in the model.}
   \item{x_title}{The text for the x-axis title.}
-  \item{y_title}{The text for the y-axis title. Default is "density" as this is 
-  making a density plot.}
+  \item{y_title}{The text for the y-axis title. Default is "density".}
   \item{main_title}{The text for the main title for the plot.}
-  \item{legend_title}{he text for the legend title for the plot. Default is 
-  "parameters".}
+  \item{legend_title}{The text for the legend title. Default is "parameters".}
   \item{alpha_geom}{A numeric value indicating the alpha parameter for the 
   geometric shapes within the plot. Defaults to 0.75}
   \item{alpha_line}{A numeric value indicating the alpha parameter for the 
