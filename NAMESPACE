@@ -11,3 +11,4 @@ importFrom(coda, as.mcmc, HPDinterval)
 importFrom(stats, density, runif, rnorm)
 importFrom(viridis, viridis)
 
+
