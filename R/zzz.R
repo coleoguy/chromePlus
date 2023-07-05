@@ -1,7 +1,7 @@
 .onAttach <- function(libname, pkgname) {
       packageStartupMessage("\nThank you for using chromePlus!\n")
       packageStartupMessage("\nTo acknowledge our work, please cite the package: \n")
-      packageStartupMessage(" Heath Blackmon, Maximos Chin, and Michelle Jonika. (2023).") 
+      packageStartupMessage(" Blackmon, H., Chin, M. and Jonika, M.M. (2023).") 
       packageStartupMessage(" chromePlus: Analysis of Chromosome Number Evolution and Binary Traits.")
       packageStartupMessage(" coleoguy/chromePlus: chromePlus version 2.0 \n")
       
