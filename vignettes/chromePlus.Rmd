@@ -1,182 +1,277 @@
 ---
-title: "ChromePlus"
+title: "chromePlus: Chromosome Number Evolution with Binary Traits"
 author: "Heath Blackmon"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{chromePlus}
+  %\VignetteIndexEntry{chromePlus: Chromosome Number Evolution with Binary Traits}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-## The model for ChromPlus
-
-Our model builds on existing dynamic phylogenetic models of chromosome number evolution (mayrose2010, glick2014), and, like the model of zenil 2017, it incorporates a binary trait that can affect rates of chromosome number change. Additionally, our model can allow for the binary trait to affect rates of speciation and extinction. Accounting for the possibility of state dependent diversification is a vital component because of the history of speciation models that invoke chromosomal evolution (bickham1979, grant1981, templeton1981, baker1986). Our model implementation is available in an R package called chromePlus <github.com/coleoguy/chromePlus>. It is built on the diversitree framework (fitzjohn2012), which provides additional amenities such as allowing for uncertainty in the binary character state, sampling incompleteness, and use of existing MCMC (Markov Chain Monte Carlo) or likelihood maximization functions to estimate model parameters.
-
-A graphical schematic of our model is shown in Figure 1, depicting the ten possible kinds of state transitions. While in binary state 1 a lineage with $i$ chromosomes may first simply stay in its current state. Otherwise, it may either increase chromosome number to $i+1$ (ascending dysploidy, $\lambda_1$), reduce chromosome number to $i-1$ (descending dysploidy, $\delta_1$), or increase chromosome number to $1.5i$ or $2i$ (demi-polyploidy, $\mu_1$ and polyploidy, $\rho_1$ respectively). Likewise, a lineage in binary state 2 with $i$ chromosomes may remain in its current state, increase chromosome number to $i+1$ (ascending dysploidy, $\lambda_2$), reduce chromosome number to $i-1$ (descending dysploidy, $\delta_2$), or increase chromosome number to $1.5i$ or $2i$ (demi-polyploidy, $\mu_2$ and polyploidy, $\rho_2$ respectively). Additionally, a lineage that is currently in one of the binary states can transition to the other state (transition from state 1 to state 2, $q_{12}$ or from state 2 state 1, $q_{21}$); these transitions occur with no change in the chromosome number. Because chromosome number is limited to whole numbers, demi-polyploidy as described above would only be possible for even values of $i$. As in previous work, we assume that demi-polyploidy when $i$ is odd leads to either of the closest whole numbers with equal probability. The state-dependent version of our model has four additional parameters: speciation and extinction in binary state 1, and speciation and extinction in binary state 2.
-
-```{r,echo=F}
-knitr::include_graphics("model.png", dpi=400)
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 4
+)
 ```
 
-**Figure 1 ChromePlus Model**
+## Introduction
 
-## Simple model chromosome increase, decrease, and whole genome duplication only:
+chromePlus implements models of chromosome number evolution that extend the
+chromEvol framework by incorporating a binary trait that can affect rates of
+chromosome gain, loss, polyploidy, and demiploidy. The package is built on the
+diversitree framework (FitzJohn 2012), which provides maximum likelihood and
+MCMC estimation, handles uncertainty in tip states, and accounts for sampling
+incompleteness.
 
-```{}
-# load packages
+## The chromePlus model
+
+The model supports ten kinds of state transitions. While in binary state 1, a
+lineage with $i$ chromosomes may:
+
+- Increase chromosome number to $i+1$ (ascending dysploidy)
+- Decrease chromosome number to $i-1$ (descending dysploidy)
+- Increase chromosome number to $2i$ (polyploidy)
+- Increase chromosome number to $1.5i$ (demi-polyploidy)
+- Transition to binary state 2 (with no chromosome number change)
+
+The same transitions are available in binary state 2 with potentially different
+rates. For the state-dependent speciation and extinction version (MuSSE), four
+additional parameters control speciation and extinction rates in each binary
+state.
+
+```{r model-figure, echo=FALSE, out.width="80%"}
+knitr::include_graphics("model.png", dpi = 400)
+```
+
+**Figure 1:** The chromePlus model showing all possible state transitions.
+
+## Installation
+
+```{r install, eval = FALSE}
+# Install from GitHub
+install.packages("remotes")
+remotes::install_github("coleoguy/chromePlus")
+```
+
+## Simulating chromosome evolution
+
+chromePlus provides two simulation functions. `simChrom()` simulates
+chromosome evolution on a fixed tree, while `makeSSEchrom()` generates both
+a tree and tip data under an SSE model.
+
+```{r simulate-2010}
 library(chromePlus)
 library(diversitree)
 
-# read tree
-tree <- read.tree("../inst/tree.new")
+# Create a random tree
+set.seed(123)
+tree <- rcoal(30)
 
-# read data
-dat1 <- read.csv("../inst/tip.data.certain.csv", as.is = T)
+# Simulate under the simple 2010 chromEvol model
+# Parameters: gain, loss, demiploidy, polyploidy, root chromosome number
+sim1 <- simChrom(tree = tree,
+                 pars = c(0.1, 0.08, 0.0, 0.01, 7),
+                 limits = c(3, 15),
+                 model = "2010")
+head(sim1)
+```
 
-# convert data appropriate for analysis
-dat.mat <- datatoMatrix(x     = dat1,
-                        range = c(18,80),
-                        hyper = F)   # this indicates no binary trait
+```{r simulate-chromplus}
+# Simulate under the ChromPlus model with a binary trait
+# Parameters: gain1, gain2, loss1, loss2, demi1, demi2, poly1, poly2,
+#             trans12, trans21, root chrom, root state
+sim2 <- simChrom(tree = tree,
+  pars = c(0.1, 0.15, 0.08, 0.12, 0, 0, 0.01, 0.02, 0.05, 0.05, 7, 0),
+  limits = c(3, 15),
+  model = "ChromPlus")
+table(sim2$binary.state)
+```
 
-# make the basic likelihood function
-lik <- make.mkn(tree = tree,
-                states = dat.mat,
-                k = ncol(dat.mat),
-                strict= F,
-                control=list(method="ode"))
+```{r simulate-sse}
+# Simulate both tree and data under an SSE model
+set.seed(42)
+sse_result <- makeSSEchrom(
+  h = 15, lambda1 = 0.3, lambda2 = 0.3,
+  mu1 = 0.1, mu2 = 0.1,
+  asc1 = 0.1, asc2 = 0.1,
+  desc1 = 0.1, desc2 = 0.1,
+  trans1 = 0.05, trans2 = 0.05,
+  max.taxa = 30, x0 = 7
+)
+plot(sse_result$tree, cex = 0.7)
+```
 
-# constrain the likelihood function to a biologically realistic design
-con.lik <- constrainMkn(data = dat.mat,
-                        lik = lik,
-                        polyploidy = F,
-                        hyper = F,
-                        constrain = list(drop.demi = T,
-                                         drop.poly= F))
+## Preparing data for model fitting
 
-# lets make sure we have the parameters we expect
+The `datatoMatrix()` function converts tip data to the probability matrix
+format required by diversitree.
+
+```{r data-prep}
+# Create example tip data
+# Column 1: species names, Column 2: chromosome number, Column 3: probability
+tip_data <- data.frame(
+  species = paste0("sp", 1:5),
+  chrom = c(5, 6, 7, 8, 10),
+  prob = c(1, 1, 1, 1, 1)
+)
+
+# Without hyperstate (simple chromEvol model)
+mat_simple <- datatoMatrix(x = tip_data, hyper = FALSE)
+mat_simple
+
+# With hyperstate (binary trait model)
+tip_data_uncertain <- data.frame(
+  species = paste0("sp", 1:5),
+  chrom = c(5, 6, 7, 8, 10),
+  prob = c(0.8, 0.6, 1.0, 0.5, 0.9)
+)
+mat_hyper <- datatoMatrix(x = tip_data_uncertain, hyper = TRUE)
+dim(mat_hyper)
+```
+
+## Fitting models
+
+### Simple model: chromosome gain, loss, and polyploidy
+
+The typical workflow uses diversitree's `make.mkn()` to build a likelihood
+function, then `constrainMkn()` to apply biologically realistic constraints.
+
+```{r simple-model, eval = FALSE}
+# Load your data
+tree <- read.tree("my_tree.nwk")
+dat <- read.csv("my_tip_data.csv", as.is = TRUE)
+
+# Convert data
+dat.mat <- datatoMatrix(x = dat, range = c(18, 80), hyper = FALSE)
+
+# Build and constrain likelihood
+lik <- make.mkn(tree = tree, states = dat.mat, k = ncol(dat.mat),
+                strict = FALSE, control = list(method = "ode"))
+
+con.lik <- constrainMkn(data = dat.mat, lik = lik, hyper = FALSE,
+                         constrain = list(drop.demi = TRUE,
+                                          drop.poly = FALSE))
+argnames(con.lik)
+
+# Fit by maximum likelihood
+n.pars <- length(argnames(con.lik))
+fit <- find.mle(con.lik, x.init = startVals(n.pars, min = 0, max = 0.5))
+```
+
+### Binary state-dependent chromosome evolution
+
+```{r binary-model, eval = FALSE}
+# Data with binary trait probabilities in column 3
+dat.mat <- datatoMatrix(x = dat, range = c(18, 80), hyper = TRUE)
+
+lik <- make.mkn(tree = tree, states = dat.mat, k = ncol(dat.mat),
+                strict = FALSE, control = list(method = "ode"))
+
+con.lik <- constrainMkn(data = dat.mat, lik = lik, hyper = TRUE,
+                          constrain = list(drop.demi = TRUE,
+                                           drop.poly = FALSE))
 argnames(con.lik)
 ```
 
+### State-dependent diversification (MuSSE)
 
-## Model with a binary state that impacts chromosome evolution
+To also test whether chromosome evolution is associated with differences in
+speciation or extinction rates:
 
-```{}
+```{r musse-model, eval = FALSE}
+dat.mat <- datatoMatrix(x = dat, range = c(18, 80), hyper = TRUE)
 
-# load packages
-library(chromePlus)
-library(diversitree)
+lik <- make.musse(tree = tree, states = dat.mat, k = ncol(dat.mat),
+                  strict = FALSE, control = list(method = "ode"))
 
-# read tree
-tree <- read.tree("../inst/tree.new")
-
-# read data
-dat1 <- read.csv("../inst/tip.data.certain.csv", as.is = T)
-
-# convert data appropriate for analysis
-dat.mat <- datatoMatrix(x     = dat1,
-                        range = c(18,80),
-                        hyper = T)   # this indicates no binary trait
-
-# make the basic likelihood function
-lik <- make.mkn(tree = tree,
-                states = dat.mat,
-                k = ncol(dat.mat),
-                strict= F,
-                control=list(method="ode"))
-
-# constrain the likelihood function to a biologically realistic design
-con.lik <- constrainMkn(data = dat.mat,
-                        lik = lik,
-                        polyploidy = F,
-                        hyper = T,
-                        constrain = list(drop.demi = T,
-                                         drop.poly= F))
-
-# lets make sure we have the parameters we expect
+con.lik <- constrainMuSSE(data = dat.mat, lik = lik,
+                           s.lambda = FALSE, s.mu = FALSE,
+                           hyper = TRUE,
+                           constrain = list(drop.demi = TRUE,
+                                            drop.poly = FALSE))
 argnames(con.lik)
+
+# Fit using MCMC
+n.pars <- length(argnames(con.lik))
+fit <- find.mle(con.lik, x.init = startVals(n.pars, min = 0, max = 0.5))
+samples <- mcmc(con.lik, x.init = coef(fit), w = 1, nsteps = 1000)
 ```
 
+## Visualizing MCMC results
 
-## More complex model with uncertainty in tip states, different rates of chromosomes evolution, speciation, and extinction rates associated with the binary character.
+The `plotChromeplus()` function creates density plots of parameter estimates
+from MCMC output with HPD intervals.
 
-```{}
+```{r plot-example, fig.width=7, fig.height=4}
+# Create example MCMC-like data for demonstration
+set.seed(42)
+mcmc_data <- data.frame(
+  gain = rnorm(500, 0.10, 0.02),
+  loss = rnorm(500, 0.15, 0.03),
+  polyploidy = rnorm(500, 0.02, 0.005)
+)
 
-# load packages
-library(chromePlus)
-library(diversitree)
-
-# read tree
-tree <- read.tree("../inst/tree.new")
-
-# read data
-dat2 <- read.csv("../inst/tip.data.uncertain.csv", as.is = T)
-
-# prepare data
-dat.mat2 <- datatoMatrix(x     = dat2,
-                         range = c(18,80),
-                         hyper = T)
-
-# make the basic likelihood function
-lik2 <- make.musse(tree = tree,
-                   states = dat.mat2,
-                   k = ncol(dat.mat2),
-                   strict= F,
-                   control=list(method="ode"))
-
-# constrain to biological reality
-con.lik2 <- constrainMuSSE(data = dat.mat2,
-                           lik = lik2,
-                           s.lambda = F,
-                           s.mu = F,
-                           polyploidy = F,
-                           hyper = T,
-                           constrain = list(drop.demi = T,
-                                            drop.poly= F))
-argnames(con.lik2)
-
+plotChromeplus(
+  data = mcmc_data,
+  colors = c("#440154", "#21918c", "#fde725"),
+  x_title = "rate",
+  main_title = "Parameter estimates from MCMC"
+)
 ```
 
-In all cases once we have a biologically realistic model we can fit it using `find.mle` or `mcmc` from the package diversitree. A brief example is shown below in depth discussion of these functions is available in diversitree.
+## Constraining models
 
-```{}
-find.mle(con.lik2, x.init = runif(min = 0, max = 1, n = 5))
-mcmc(con.lik2, x.init = runif(min = 0, max = 1, n = 5), w = 1, nsteps = 10)
+Both `constrainMkn()` and `constrainMuSSE()` accept constraint arguments to
+simplify the full model.
+
+### Main arguments
+
+| Argument     | Effect |
+|:-------------|:-------|
+| `hyper`      | If `FALSE`, the binary state is ignored |
+| `polyploidy` | If `TRUE`, the hyperstate represents ploidy level |
+| `oneway`     | If `TRUE`, transitions from state 2 to 1 are set to zero (mkn only) |
+
+### Constraint list options
+
+| Option            | Effect |
+|:------------------|:-------|
+| `drop.poly`       | Set polyploidy rate to zero |
+| `drop.demi`       | Set demiploidy rate to zero |
+| `symmetric`       | Force equal rates across binary states |
+| `nometa`          | Constrain chromosome rates to be equal across hyperstates |
+| `meta`            | `"ARD"` (default) or `"SYM"` for hyperstate transitions |
+| `saf.model`       | Use sex chromosome-autosome fusion model (mkn only) |
+| `sym.hyperstates` | Equal ascending/descending rates across hyperstates (mkn only) |
+
+### Additional MuSSE arguments
+
+| Argument   | Effect |
+|:-----------|:-------|
+| `s.lambda` | If `TRUE` (default), a single speciation rate is estimated |
+| `s.mu`     | If `TRUE` (default), a single extinction rate is estimated |
+
+## Generating starting values
+
+The `startVals()` helper generates random starting values for optimization:
+
+```{r starting-vals}
+# Uniform starting values
+startVals(n = 5, min = 0, max = 0.5)
+
+# Normal starting values
+startVals(n = 5, mean = 0.1, sd = 0.05, dist = "norm")
 ```
 
-## constraining models
+## References
 
-The function `constrainMkn` has a series of arguments that allow for realistic models of chromosome evolution.  The default settings for the functions is to fit the most complex model with all possible transitions shown in figure one estimated seperately.  The table below details the arguments that can be used to simplify this full model.
+Blackmon, H., Justison, J., Mayrose, I. and Goldberg, E.E. (2019). Meiotic
+drive shapes rates of karyotype evolution in mammals. *Evolution*, 73(3),
+511--523.
 
-Argument    |Effect
-------------|------------------------------------------
-hyper       |when set to `FALSE` the binary state is ignored so only a single rate of gain, loss, demiploidy, and polyploidy are possible
-polyploidy  |if set to `TRUE` the the hyper state that is evaluated is polyploidy this means that transition from state 1 to state 2 in the binary character also double the chromosome number
-constrain   |is given a list with any of the 5 additional constraint descriptions given below
-            |
-drop.poly   |if set to `TRUE` then the rate of polyploidy is set to zero
-drop.demi   |if set to `TRUE` then the rate of demiploidy is set to zero
-symmetric   |if set to `TRUE` then the rates estimated in the two binary states are forced to be equal
-nometa      |if set to `TRUE` then the binary state is ignored
-meta="ARD"  |can be set to "ARD" or "SYM" to describe wether q12 and q21 are the same or different
-
-
-
-The function `constrainMuSSE` has a series of arguments that allow for realistic models of chromosome evolution.  The default settings for the functions is to fit the most complex model with all possible transitions shown in figure one estimated seperately.  The table below details the arguments that can be used to simplify this full model.
-
-Argument    |Effect
-------------|------------------------------------------
-hyper       |when set to `FALSE` the binary state is ignored so only a single rate of gain, loss, demiploidy, and polyploidy are possible
-polyploidy  |if set to `TRUE` the the hyper state that is evaluated is polyploidy this means that transition from state 1 to state 2 in the binary character also double the chromosome number
-s.lambda    |if set to `TRUE` then a single lambda (speciation rate) is estimated 
-s.mu        |if set to `TRUE` then a single mu (extinction rate) is estimated
-constrain   |is given a list with any of the 5 additional constraint descriptions given below
-            |
-drop.poly   |if set to `TRUE` then the rate of polyploidy is set to zero
-drop.demi   |if set to `TRUE` then the rate of demiploidy is set to zero
-symmetric   |if set to `TRUE` then the rates estimated in the two binary states are forced to be equal
-nometa      |if set to `TRUE` then the binary state is ignored
-meta="ARD"  |can be set to "ARD" or "SYM" to describe wether q12 and q21 are the same or different
-
-
-
+FitzJohn, R.G. (2012). Diversitree: comparative phylogenetic analyses of
+diversification in R. *Methods in Ecology and Evolution*, 3(6), 1084--1092.
