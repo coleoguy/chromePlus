@@ -1,0 +1,29 @@
+bibentry(
+  bibtype  = "Article",
+  title    = "Meiotic drive shapes rates of karyotype evolution in mammals",
+  author   = c(
+    person("Heath", "Blackmon"),
+    person("Joshua", "Justison"),
+    person("Itay", "Mayrose"),
+    person("Emma E.", "Goldberg")
+  ),
+  journal  = "Evolution",
+  year     = "2019",
+  volume   = "73",
+  number   = "3",
+  pages    = "511--523",
+  doi      = "10.1111/evo.13682"
+)
+
+bibentry(
+  bibtype  = "Manual",
+  title    = "chromePlus: Analysis of Chromosome Number Evolution and Binary Traits",
+  author   = c(
+    person("Heath", "Blackmon"),
+    person("Maximos", "Chin"),
+    person("Michelle M.", "Jonika")
+  ),
+  year     = "2023",
+  doi      = "10.5281/zenodo.8102439",
+  url      = "https://github.com/coleoguy/chromePlus"
+)

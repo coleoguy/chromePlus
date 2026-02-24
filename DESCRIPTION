@@ -1,14 +1,43 @@
 Package: chromePlus
 Type: Package
-Title: Analysis of chromosome number evolution and binary traits
-Version: 0.0.1
-Date: 2016-03-16
-Author: Michelle M. Jonika, Heath Blackmon, Emma Goldberg, Itay Mayrose
-Maintainer: Heath Blackmon <coleoguy@gmail.com>
-Description: Implements models of chromosome evolution similar to chromevol using mkn and MuSSE models in diversitree.
+Title: Analysis of Chromosome Number Evolution and Binary Traits
+Version: 2.0.0
+Authors@R: c(
+    person("Heath", "Blackmon", email = "coleoguy@gmail.com",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-5433-4036")),
+    person("Michelle M.", "Jonika",
+           role = "aut",
+           comment = c(ORCID = "0000-0002-1170-6418")),
+    person("Emma", "Goldberg",
+           role = "aut",
+           comment = c(ORCID = "0000-0002-7311-9606")),
+    person("Itay", "Mayrose",
+           role = "aut",
+           comment = c(ORCID = "0000-0002-8460-1502")),
+    person("Maximos", "Chin",
+           role = "ctb"))
+Description: Implements models of chromosome number evolution similar to
+    chromEvol using Markov and MuSSE models in the diversitree framework.
+    Supports state-dependent chromosome evolution where a binary trait can
+    affect rates of chromosome gain, loss, polyploidy, and demiploidy, as
+    well as state-dependent speciation and extinction.
 License: GPL (>= 2)
 URL: https://github.com/coleoguy/chromePlus
-Imports: diversitree, ggplot2, coda, stats, viridis
-Suggests: knitr,
-    rmarkdown
+BugReports: https://github.com/coleoguy/chromePlus/issues
+Depends:
+    R (>= 3.5.0)
+Imports:
+    diversitree,
+    ggplot2,
+    coda,
+    stats,
+    viridis
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
+Encoding: UTF-8
+RoxygenNote: 7.3.3
+Roxygen: list(markdown = TRUE)
