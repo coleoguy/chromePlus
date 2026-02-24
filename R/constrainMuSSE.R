@@ -1,28 +1,79 @@
-## TODO finish filling out the constrain argument
-## I want it to be a list that could have the following elements
-
-## drop.poly=T: polyoploidy is dropped from model
-## drop.demi=T: demiploidy is dropped from model
-## singlerate=T: gain and loss rate are equal for each meta state
-## nometa=T: gain1 and gain2 are equal and loss1 and loss2 are equal
-## meta="ARD": assumes q01 and q10 are different if "SYM" then single rate
-
-# rates that are implemented include
-# rate1 ascending aneuploidy - diploid      asc1
-# rate2 descending aneuploidy - diploid     desc1
-# rate3 ascending aneuploidy - polyploid    asc2
-# rate4 descending aneuploidy - polyploid   desc2
-# rate5 polyploidization of diploid          poly1
-# rate6 polploidization of polyploid         poly2
-# rate7 rediploidization of a polyploid
-# rate8 transitions from 1 to 2 for hyperstate
-# rate9 transitions from 2 to 1 for hyperstate
-# rate10 demipolyploidy for state1            dem1 even
-# rate11 demipolyploidy for state1            dem1 odd
-# rate12 demipolyploidy for state2            dem2 even
-# rate13 demipolyploidy for state2            dem2 odd
-
-constrainMuSSE <- function(data, 
+#' Constrain a MuSSE Likelihood Function for Chromosome Evolution
+#'
+#' Constrains a diversitree `MuSSE` (Multi-State Speciation and Extinction)
+#' likelihood function to model chromosome number evolution with
+#' state-dependent diversification. This extends [constrainMkn()] by allowing
+#' speciation and extinction rates to differ between binary states.
+#'
+#' @param data A probability matrix as produced by [datatoMatrix()]. Rows are
+#'   species, columns are chromosome states (and optionally hyperstate columns).
+#' @param lik A likelihood function created by `diversitree::make.musse()`.
+#' @param hyper Logical. If `TRUE` (default), includes a binary hyperstate
+#'   allowing different rates of chromosome evolution in each state.
+#' @param polyploidy Logical. If `TRUE`, the hyperstate represents ploidy
+#'   level (diploid vs. polyploid). Defaults to `FALSE`.
+#' @param s.lambda Logical. If `TRUE` (default), a single speciation rate is
+#'   estimated across all states. If `FALSE`, separate speciation rates are
+#'   estimated for each hyperstate.
+#' @param s.mu Logical. If `TRUE` (default), a single extinction rate is
+#'   estimated across all states. If `FALSE`, separate extinction rates are
+#'   estimated for each hyperstate.
+#' @param verbose Logical. If `TRUE`, returns a list containing the
+#'   constrained likelihood function and the parameter identity matrix.
+#'   Defaults to `FALSE`.
+#' @param constrain A list of additional model constraints. Can include:
+#'   \describe{
+#'     \item{drop.poly}{Logical. If `TRUE`, polyploidy rate is set to zero.}
+#'     \item{drop.demi}{Logical. If `TRUE`, demiploidy rate is set to zero.}
+#'     \item{symmetric}{Logical. If `TRUE`, chromosome change rates are equal
+#'       across binary states.}
+#'     \item{nometa}{Logical. If `TRUE`, chromosome rates are constrained to
+#'       be equal across hyperstates.}
+#'     \item{meta}{Character. Either `"ARD"` (all rates different, default) or
+#'       `"SYM"` (symmetric transitions between hyperstates).}
+#'   }
+#'
+#' @return If `verbose = FALSE` (default), returns a constrained likelihood
+#'   function compatible with `diversitree::find.mle()` and
+#'   `diversitree::mcmc()`. If `verbose = TRUE`, returns a list with the
+#'   constrained likelihood function and parameter identity matrix.
+#'
+#' @details
+#' The chromosome evolution rates are the same as in [constrainMkn()]:
+#' ascending/descending aneuploidy, polyploidy, demiploidy, and transitions
+#' between hyperstates. In addition, this function constrains speciation
+#' (`lambda`) and extinction (`mu`) rates, which can either be shared across
+#' states or estimated separately depending on `s.lambda` and `s.mu`.
+#'
+#' @seealso [constrainMkn()] for the mkn (no diversification) version,
+#'   [datatoMatrix()] for preparing input data.
+#'
+#' @references
+#' Blackmon, H., Justison, J., Mayrose, I. and Goldberg, E.E. (2019). Meiotic
+#' drive shapes rates of karyotype evolution in mammals. *Evolution*, 73(3),
+#' 511--523.
+#'
+#' @examples
+#' \donttest{
+#' library(diversitree)
+#' # Create example data with uncertainty in binary trait
+#' dat <- data.frame(
+#'   species = paste0("sp", 1:5),
+#'   chrom = c(5, 6, 7, 8, 10),
+#'   prob = c(0.8, 0.6, 0.9, 0.5, 1.0)
+#' )
+#' dat.mat <- datatoMatrix(x = dat, hyper = TRUE)
+#' tree <- ape::rcoal(5, tip.label = dat$species)
+#' lik <- make.musse(tree, states = dat.mat, k = ncol(dat.mat),
+#'                   strict = FALSE, control = list(method = "ode"))
+#' con.lik <- constrainMuSSE(data = dat.mat, lik = lik,
+#'                            s.lambda = FALSE, s.mu = FALSE,
+#'                            constrain = list(drop.demi = TRUE))
+#' argnames(con.lik)
+#' }
+#'
+#' @export
+constrainMuSSE <- function(data,
                            lik, 
                            hyper = T, 
                            polyploidy = F, 

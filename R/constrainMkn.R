@@ -1,23 +1,93 @@
-
-# rates that are implemented include
-# rate1 ascending aneuploidy - diploid      asc1
-# rate2 descending aneuploidy - diploid     desc1
-# rate3 ascending aneuploidy - polyploid    asc2
-# rate4 descending aneuploidy - polyploid   desc2
-# rate5 polyploidization of diploid          poly1
-# rate6 polploidization of polyploid         poly2
-# rate7 rediploidization of a polyploid
-# rate8 transitions from 1 to 2 for hyperstate
-# rate9 transitions from 2 to 1 for hyperstate
-# rate10 demipolyploidy for state1            dem1 even
-# rate11 demipolyploidy for state1            dem1 odd
-# rate12 demipolyploidy for state2            dem2 even
-# rate13 demipolyploidy for state2            dem2 odd
-
-# can additional constraints can be added after this
-# function by using the normal constrain approach
-
-constrainMkn <- function(data, 
+#' Constrain an mkn Likelihood Function for Chromosome Evolution
+#'
+#' Constrains a diversitree `mkn` likelihood function to match a biologically
+#' realistic model of chromosome number evolution. Supports three major model
+#' types: a simple chromEvol model (no binary trait), a model where ploidy is
+#' the hidden state, and a model where a binary trait affects chromosome
+#' evolution rates. Additionally supports a sex chromosome-autosome fusion
+#' (SAF) model.
+#'
+#' @param data A probability matrix as produced by [datatoMatrix()]. Rows are
+#'   species, columns are chromosome states (and optionally hyperstate columns).
+#' @param lik A likelihood function created by `diversitree::make.mkn()`.
+#' @param hyper Logical. If `TRUE` (default), includes a binary hyperstate
+#'   allowing different rates of chromosome evolution in each state.
+#' @param polyploidy Logical. If `TRUE`, the hyperstate represents ploidy
+#'   level (diploid vs. polyploid), and transitions between states also change
+#'   chromosome number. Defaults to `FALSE`.
+#' @param verbose Logical. If `TRUE`, returns a list containing the
+#'   constrained likelihood function, the parameter identity matrix, and the
+#'   rate table. Defaults to `FALSE`.
+#' @param oneway Logical. If `TRUE`, the transition rate from state 2 back to
+#'   state 1 is set to zero. Defaults to `FALSE`.
+#' @param constrain A list of additional model constraints. Can include:
+#'   \describe{
+#'     \item{drop.poly}{Logical. If `TRUE`, polyploidy rate is set to zero.}
+#'     \item{drop.demi}{Logical. If `TRUE`, demiploidy rate is set to zero.}
+#'     \item{symmetric}{Logical. If `TRUE`, chromosome change rates are equal
+#'       across binary states.}
+#'     \item{nometa}{Logical. If `TRUE`, chromosome rates are constrained to
+#'       be equal across hyperstates.}
+#'     \item{meta}{Character. Either `"ARD"` (all rates different, default) or
+#'       `"SYM"` (symmetric transitions between hyperstates).}
+#'     \item{saf.model}{Logical. If `TRUE`, transitions between hyperstates
+#'       follow the sex chromosome-autosome fusion model.}
+#'     \item{sym.hyperstates}{Logical. If `TRUE`, ascending and descending
+#'       rates are equal across hyperstates.}
+#'   }
+#'
+#' @return If `verbose = FALSE` (default), returns a constrained likelihood
+#'   function compatible with `diversitree::find.mle()` and
+#'   `diversitree::mcmc()`. If `verbose = TRUE`, returns a list with elements:
+#'   \describe{
+#'     \item{`likelihood function`}{The constrained likelihood function.}
+#'     \item{`parameter matrix`}{A matrix showing which rate category each
+#'       transition belongs to.}
+#'     \item{`ratetable`}{A data frame mapping transitions to rate names.}
+#'   }
+#'
+#' @details
+#' The rates in the model are:
+#' \describe{
+#'   \item{asc1/asc2}{Ascending aneuploidy in state 1/2}
+#'   \item{desc1/desc2}{Descending aneuploidy in state 1/2}
+#'   \item{pol1/pol2}{Polyploidization in state 1/2}
+#'   \item{dem1/dem2}{Demipolyploidy in state 1/2}
+#'   \item{redip}{Rediploidization}
+#'   \item{tran12/tran21}{Transitions between hyperstates}
+#'   \item{tranSAF/tranRo}{SAF transitions (sex chromosome-autosome fusions
+#'     and Robertsonian transitions)}
+#' }
+#'
+#' @seealso [constrainMuSSE()] for the MuSSE (state-dependent diversification)
+#'   version, [datatoMatrix()] for preparing input data.
+#'
+#' @references
+#' Blackmon, H., Justison, J., Mayrose, I. and Goldberg, E.E. (2019). Meiotic
+#' drive shapes rates of karyotype evolution in mammals. *Evolution*, 73(3),
+#' 511--523.
+#'
+#' @examples
+#' \donttest{
+#' library(diversitree)
+#' # Create example data
+#' dat <- data.frame(
+#'   species = paste0("sp", 1:5),
+#'   chrom = c(5, 6, 7, 8, 10),
+#'   prob = c(1, 1, 1, 1, 1)
+#' )
+#' dat.mat <- datatoMatrix(x = dat, hyper = FALSE)
+#' # Create a random tree
+#' tree <- ape::rcoal(5, tip.label = dat$species)
+#' lik <- make.mkn(tree, states = dat.mat, k = ncol(dat.mat),
+#'                 strict = FALSE, control = list(method = "ode"))
+#' con.lik <- constrainMkn(data = dat.mat, lik = lik, hyper = FALSE,
+#'                          constrain = list(drop.demi = TRUE))
+#' argnames(con.lik)
+#' }
+#'
+#' @export
+constrainMkn <- function(data,
                          lik, 
                          hyper = T, 
                          polyploidy = F, 

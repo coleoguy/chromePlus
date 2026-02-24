@@ -1,0 +1,13 @@
+#' @keywords internal
+"_PACKAGE"
+
+## usethis namespace: start
+#' @importFrom diversitree find.mle make.mkn constrain sim.character tree.musse
+#' @importFrom ggplot2 theme_bw theme ggplot geom_density geom_line geom_vline
+#'   scale_color_manual scale_fill_manual guides labs element_blank element_line
+#'   element_text guide_legend aes after_stat
+#' @importFrom coda as.mcmc HPDinterval
+#' @importFrom stats density runif rnorm
+#' @importFrom viridis viridis
+## usethis namespace: end
+NULL

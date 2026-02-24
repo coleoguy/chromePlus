@@ -1,11 +1,74 @@
+#' Simulate Chromosome Number Evolution on a Phylogeny
+#'
+#' Simulates chromosome number evolution along a fixed phylogenetic tree using
+#' one of four built-in models or a user-provided Q-matrix. Internally uses
+#' `diversitree::sim.character()` with an `mkn` model.
+#'
+#' @param tree A phylogenetic tree of class `"phylo"`.
+#' @param pars Numeric vector of model parameters. Length depends on the model:
+#'   \describe{
+#'     \item{`"2010"` (length 5)}{gain, loss, demiploidy, polyploidy, root
+#'       chromosome number}
+#'     \item{`"ChromPlus"` or `"SAF"` (length 12)}{gain1, gain2, loss1, loss2,
+#'       demiploidy1, demiploidy2, polyploidy1, polyploidy2, transition 1->2,
+#'       transition 2->1, root chromosome number, root binary state (0 or 1)}
+#'     \item{`"PloidEvol"` (length 11)}{gain-diploid, gain-polyploid,
+#'       loss-diploid, loss-polyploid, demiploidy-diploid, demiploidy-polyploid,
+#'       polyploidy-diploid, polyploidy-polyploid, rediploidization, root
+#'       chromosome number, root ploidy state (0=diploid, 1=polyploid)}
+#'     \item{`NULL` with Qmat (length 1)}{root chromosome number}
+#'   }
+#' @param limits Numeric vector of length 2 with the minimum and maximum
+#'   chromosome numbers, e.g. `c(3, 20)`. Required for built-in models.
+#'   Ignored when using a custom Q-matrix.
+#' @param model Character string specifying the model: `"2010"`, `"ChromPlus"`,
+#'   `"PloidEvol"`, or `"SAF"`. Defaults to `NULL` (user-provided Q-matrix).
+#' @param Qmat A user-provided square Q-matrix describing chromosome evolution
+#'   rates. Row and column names should be chromosome state labels. Diagonals
+#'   are automatically set. Only used when `model = NULL`.
+#' @param verbose Logical. If `TRUE`, the parameter matrix used to build the
+#'   model is also returned. Defaults to `FALSE`.
+#'
+#' @return Depends on the model:
+#'   \describe{
+#'     \item{`"2010"` or `NULL`}{A named numeric vector of chromosome numbers
+#'       at tree tips. If `verbose = TRUE`, a list with `chrom.num` and
+#'       `parameter.matrix`.}
+#'     \item{`"ChromPlus"`}{A list with `binary.state` (0/1 vector) and
+#'       `chrom.num`. If `verbose = TRUE`, also includes `parameter.matrix`.}
+#'     \item{`"PloidEvol"`}{A list with `ploidy.state` (0/1 vector) and
+#'       `chrom.num`. If `verbose = TRUE`, also includes `parameter.matrix`.}
+#'     \item{`"SAF"`}{A list with `fusion.state` (0/1 vector) and
+#'       `chrom.num`. If `verbose = TRUE`, also includes `parameter.matrix`.}
+#'   }
+#'
+#' @seealso [makeSSEchrom()] for simulating both tree and chromosome data
+#'   under an SSE model, [constrainMkn()] and [constrainMuSSE()] for fitting
+#'   models.
+#'
+#' @references
+#' Blackmon, H., Justison, J., Mayrose, I. and Goldberg, E.E. (2019). Meiotic
+#' drive shapes rates of karyotype evolution in mammals. *Evolution*, 73(3),
+#' 511--523.
+#'
+#' @examples
+#' \donttest{
+#' tree <- ape::rcoal(20)
+#' # Simple 2010 model
+#' result <- simChrom(tree = tree,
+#'                    pars = c(0.1, 0.1, 0.0, 0.01, 5),
+#'                    limits = c(3, 12), model = "2010")
+#' head(result)
+#'
+#' # ChromPlus model with binary trait
+#' result2 <- simChrom(tree = tree,
+#'   pars = c(0.1, 0.1, 0.1, 0.1, 0, 0, 0.01, 0.01, 0.05, 0.05, 5, 0),
+#'   limits = c(3, 12), model = "ChromPlus")
+#' table(result2$binary.state)
+#' }
+#'
+#' @export
 simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL, verbose = F){
-  # args: tree, pars, limits
-  # tree: phylo object
-  # pars: c(gain[1:2], loss[1:2], demi[1:2], poly[1:2], root)
-  # limits: c(low, high), NULL
-  # model: "2010", "ChromTrait", "PloidEvol", "SAF", NULL
-  # Qmat: NULL (default) or user supplied Q-matrix
-  # verbose: option to return parameter matrix
 
   if(is.null(model)==F && model == "2010"){
     print("building q-matrix")
