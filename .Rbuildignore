@@ -7,3 +7,5 @@
 ^\.claude$
 ^\.DS_Store$
 ^\.Rhistory$
+^doc$
+^Meta$
