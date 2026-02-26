@@ -7,12 +7,14 @@
 constrainMuSSE(
   data,
   lik,
-  hyper = T,
-  polyploidy = F,
-  s.lambda = T,
-  s.mu = T,
-  verbose = F,
-  constrain = list(drop.poly = F, drop.demi = F, symmetric = F, nometa = F, meta = "ARD")
+  hyper = TRUE,
+  polyploidy = FALSE,
+  s.lambda = TRUE,
+  s.mu = TRUE,
+  verbose = FALSE,
+  state.names = NULL,
+  constrain = list(drop.poly = FALSE, drop.demi = FALSE, symmetric = FALSE, nometa =
+    FALSE, meta = "ARD")
 )
 }
 \arguments{
@@ -38,6 +40,11 @@ estimated for each hyperstate.}
 \item{verbose}{Logical. If \code{TRUE}, returns a list containing the
 constrained likelihood function and the parameter identity matrix.
 Defaults to \code{FALSE}.}
+
+\item{state.names}{An optional character vector of length 2 giving
+descriptive names for the two binary states, e.g. \code{c("matched", "mismatched")}. When provided, all parameter names use these labels
+(e.g. \code{asc.matched} instead of \code{asc1}, \code{lambda.matched} instead of
+\code{lambda1}). Defaults to \code{NULL} (numeric suffixes).}
 
 \item{constrain}{A list of additional model constraints. Can include:
 \describe{
@@ -69,6 +76,9 @@ ascending/descending aneuploidy, polyploidy, demiploidy, and transitions
 between hyperstates. In addition, this function constrains speciation
 (\code{lambda}) and extinction (\code{mu}) rates, which can either be shared across
 states or estimated separately depending on \code{s.lambda} and \code{s.mu}.
+
+When \code{state.names} is provided, speciation and extinction parameters
+are also labeled descriptively (e.g. \code{lambda.matched}, \code{mu.mismatched}).
 }
 \examples{
 \donttest{
@@ -85,6 +95,7 @@ lik <- make.musse(tree, states = dat.mat, k = ncol(dat.mat),
                   strict = FALSE, control = list(method = "ode"))
 con.lik <- constrainMuSSE(data = dat.mat, lik = lik,
                            s.lambda = FALSE, s.mu = FALSE,
+                           state.names = c("matched", "mismatched"),
                            constrain = list(drop.demi = TRUE))
 argnames(con.lik)
 }

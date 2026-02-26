@@ -17,7 +17,8 @@ makeSSEchrom(
   trans1,
   trans2,
   max.taxa,
-  x0
+  x0,
+  state.names = NULL
 )
 }
 \arguments{
@@ -47,13 +48,18 @@ makeSSEchrom(
 are present.}
 
 \item{x0}{Integer. Starting haploid chromosome number at the root.}
+
+\item{state.names}{An optional character vector of length 2 giving
+descriptive names for the two binary states, e.g. \code{c("matched", "mismatched")}. When provided, the \code{binary.char} output uses these
+labels instead of 0/1. Defaults to \code{NULL}.}
 }
 \value{
 A list with three elements:
 \describe{
 \item{tree}{A phylogenetic tree of class \code{"phylo"}.}
-\item{binary.char}{A named integer vector of binary character states
-(0 or 1) for each tip.}
+\item{binary.char}{A named vector of binary character states for each
+tip. If \code{state.names} is provided, values are the descriptive labels;
+otherwise integer 0 or 1.}
 \item{haploid.num}{A named integer vector of haploid chromosome numbers
 for each tip.}
 }
@@ -78,9 +84,11 @@ result <- makeSSEchrom(
   asc1 = 0.1, asc2 = 0.1,
   desc1 = 0.1, desc2 = 0.1,
   trans1 = 0.05, trans2 = 0.05,
-  max.taxa = 30, x0 = 5
+  max.taxa = 30, x0 = 5,
+  state.names = c("matched", "mismatched")
 )
 plot(result$tree)
+table(result$binary.char)
 }
 
 }

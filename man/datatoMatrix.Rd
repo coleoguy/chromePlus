@@ -4,7 +4,7 @@
 \alias{datatoMatrix}
 \title{Convert Tip Data to a Probability Matrix}
 \usage{
-datatoMatrix(x, range = NULL, hyper = T, buffer = 0)
+datatoMatrix(x, range = NULL, hyper = TRUE, buffer = 0)
 }
 \arguments{
 \item{x}{A data frame with at least 2 columns:

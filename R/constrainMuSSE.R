@@ -21,6 +21,11 @@
 #' @param verbose Logical. If `TRUE`, returns a list containing the
 #'   constrained likelihood function and the parameter identity matrix.
 #'   Defaults to `FALSE`.
+#' @param state.names An optional character vector of length 2 giving
+#'   descriptive names for the two binary states, e.g. `c("matched",
+#'   "mismatched")`. When provided, all parameter names use these labels
+#'   (e.g. `asc.matched` instead of `asc1`, `lambda.matched` instead of
+#'   `lambda1`). Defaults to `NULL` (numeric suffixes).
 #' @param constrain A list of additional model constraints. Can include:
 #'   \describe{
 #'     \item{drop.poly}{Logical. If `TRUE`, polyploidy rate is set to zero.}
@@ -45,6 +50,9 @@
 #' (`lambda`) and extinction (`mu`) rates, which can either be shared across
 #' states or estimated separately depending on `s.lambda` and `s.mu`.
 #'
+#' When `state.names` is provided, speciation and extinction parameters
+#' are also labeled descriptively (e.g. `lambda.matched`, `mu.mismatched`).
+#'
 #' @seealso [constrainMkn()] for the mkn (no diversification) version,
 #'   [datatoMatrix()] for preparing input data.
 #'
@@ -68,148 +76,154 @@
 #'                   strict = FALSE, control = list(method = "ode"))
 #' con.lik <- constrainMuSSE(data = dat.mat, lik = lik,
 #'                            s.lambda = FALSE, s.mu = FALSE,
+#'                            state.names = c("matched", "mismatched"),
 #'                            constrain = list(drop.demi = TRUE))
 #' argnames(con.lik)
 #' }
 #'
 #' @export
 constrainMuSSE <- function(data,
-                           lik, 
-                           hyper = T, 
-                           polyploidy = F, 
-                           s.lambda = T, 
-                           s.mu = T, 
-                           verbose=F, 
-                           constrain=list(drop.poly=F, 
-                                          drop.demi=F, 
-                                          symmetric=F, 
-                                          nometa=F, 
-                                          meta="ARD")){
-  # This fills out the list of constraints the default are no constraints
-  if(length(constrain) < 5){
-    if(is.null(constrain$drop.pol)) constrain$drop.poly=F
-    if(is.null(constrain$drop.demi)) constrain$drop.demi=F
-    if(is.null(constrain$symmetric)) constrain$symmetric=F
-    if(is.null(constrain$nometa)) constrain$nometa=F
-    if(is.null(constrain$meta)) constrain$meta="ARD"
+                           lik,
+                           hyper = TRUE,
+                           polyploidy = FALSE,
+                           s.lambda = TRUE,
+                           s.mu = TRUE,
+                           verbose = FALSE,
+                           state.names = NULL,
+                           constrain = list(drop.poly = FALSE,
+                                          drop.demi = FALSE,
+                                          symmetric = FALSE,
+                                          nometa = FALSE,
+                                          meta = "ARD")){
+
+  # Validate state.names
+  if (!is.null(state.names)) {
+    if (!is.character(state.names) || length(state.names) != 2) {
+      stop("state.names must be a character vector of length 2")
+    }
   }
+
+  # This fills out the list of constraints the default are no constraints
+  if (is.null(constrain$drop.poly)) constrain$drop.poly <- FALSE
+  if (is.null(constrain$drop.demi)) constrain$drop.demi <- FALSE
+  if (is.null(constrain$symmetric)) constrain$symmetric <- FALSE
+  if (is.null(constrain$nometa)) constrain$nometa <- FALSE
+  if (is.null(constrain$meta)) constrain$meta <- "ARD"
 
   ## BUILD AN EMPTY MATRIX MATCHING OUR MODEL
   # padding rate names
-  if(ncol(data) < 100) pad <- 2
-  if(ncol(data) >= 100) pad <- 3
-  if(ncol(data) < 10) pad <- 1
+  if (ncol(data) < 100) pad <- 2
+  if (ncol(data) >= 100) pad <- 3
+  if (ncol(data) < 10) pad <- 1
   # make the matrix of rates
-  parMat <- matrix(0,ncol(data),ncol(data))
+  parMat <- matrix(0, ncol(data), ncol(data))
   # make the components of the rate names the column and row
   # names this will allow for easy creation of constraints later
-  colnames(parMat) <- sprintf(paste('%0', pad, 'd', sep=""), 1:ncol(parMat))
+  colnames(parMat) <- sprintf(paste('%0', pad, 'd', sep = ""), 1:ncol(parMat))
   rownames(parMat) <- colnames(parMat)
 
   # we need to know where our duplication of the matrix begins so here is that
-  split <- ncol(parMat)/2
-  
+  split <- ncol(parMat) / 2
+
   # we also need the actual chromosome numbers
-  if(hyper==T) chroms <- as.numeric(colnames(data)[1:split])
-  if(hyper==F) chroms <- as.numeric(colnames(data))
-  
+  if (hyper == TRUE) chroms <- as.numeric(colnames(data)[1:split])
+  if (hyper == FALSE) chroms <- as.numeric(colnames(data))
+
   ## NOW WE HAVE A SERIES OF LOOPS THAT FILL IN OUR parMat
   ## MATRIX WITH NUMBERS 1:13 INDICATIVE OF THE DIFFERENT POSSIBLE
   ## RATES WE WISH TO INCLUDE IN OUR MODEL.  EACH OF THESE LOOPS
   ## REPRESENT A DIFFERENT MODEL OF CHROMOSOME EVOLUTION
-  
-  ## OLD CRHOMEVOL MODEL
-  if(hyper==F){
-    print("Constraining model to simple chromevol version")
-    for(i in 1:(nrow(parMat) - 1)){
-      if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms==(chroms[i]*2))] <- 5 #polyploidy
-      if((ceiling(chroms[i] * 1.5)) <= max(chroms)){
+
+  ## OLD CHROMEVOL MODEL
+  if (hyper == FALSE) {
+    message("Constraining model to simple chromevol version")
+    for (i in 1:(nrow(parMat) - 1)) {
+      if ((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms == (chroms[i] * 2))] <- 5 #polyploidy
+      if ((ceiling(chroms[i] * 1.5)) <= max(chroms)) {
         x <- chroms[i] * 1.5
-        if(x %% 1 == 0)  parMat[i, which(chroms==x)] <- 10 #demiploidy state1 even
-        if(x %% 1 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- 11 #demiploidy state 1 odd
+        if (x %% 1 == 0)  parMat[i, which(chroms == x)] <- 10 #demiploidy state1 even
+        if (x %% 1 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- 11 #demiploidy state 1 odd
       }
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy
       parMat[(i + 1), i] <- 2 #descending aneuploidy
     }
-    # currently this has the issue of missing polyploidy for q12 should only be an issue when low chrom number is 1
-    # this transition should be = ascending + polyploidy this should
   }
-  
+
   # BiSCE MODEL 1 PLOIDY IS hyper STATE
-  if(hyper==T & polyploidy == T){
-    print("Constraining model where ploidy is a meta state and different rates of chromosome evolution are possible based on being polyploid or diploid")
+  if (hyper == TRUE & polyploidy == TRUE) {
+    message("Constraining model where ploidy is a meta state and different rates of chromosome evolution are possible based on being polyploid or diploid")
     # diploid rates
-    for(i in 1:(split - 1)){
-      if((chroms[i] * 2) <= max(chroms)) parMat[i, (which(chroms[i] * 2 == chroms) + split)] <- 5 #polyploidy-1
+    for (i in 1:(split - 1)) {
+      if ((chroms[i] * 2) <= max(chroms)) parMat[i, (which(chroms[i] * 2 == chroms) + split)] <- 5 #polyploidy-1
       # demiploidy
-      if((ceiling(chroms[i] * 1.5)) <= max(chroms)){
+      if ((ceiling(chroms[i] * 1.5)) <= max(chroms)) {
         x <- chroms[i] * 1.5
-        if(x %% 1 == 0)  parMat[i, (which(chroms==x) + split)] <- 10 #demiploidy state1 even
-        if(x %% 1 != 0)  parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <- 11 #demiploidy state 1 odd
+        if (x %% 1 == 0)  parMat[i, (which(chroms == x) + split)] <- 10 #demiploidy state1 even
+        if (x %% 1 != 0)  parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <- 11 #demiploidy state 1 odd
       }
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy - diploids
       parMat[(i + 1), i] <- 2 #descending aneuploidy - diploids
     }
     # polyploid rates
-    for(i in (split + 1):(nrow(parMat) - 1)){
-      if((chroms[i-split] * 2) <= max(chroms)) parMat[i, (which(chroms[i-split] * 2 == chroms) + split)] <- 6 #polyploidy-2
+    for (i in (split + 1):(nrow(parMat) - 1)) {
+      if ((chroms[i - split] * 2) <= max(chroms)) parMat[i, (which(chroms[i - split] * 2 == chroms) + split)] <- 6 #polyploidy-2
       # demiploidy
-      if((ceiling(chroms[i-split] * 1.5)) <= max(chroms)){
-        x <- chroms[i-split] * 1.5
-        if(x %% 1 == 0)  parMat[i, (which(chroms==x) + split)] <- 12 #demiploidy state1 even
-        if(x %% 1 != 0)  parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <- 13 #demiploidy state 1 odd
+      if ((ceiling(chroms[i - split] * 1.5)) <= max(chroms)) {
+        x <- chroms[i - split] * 1.5
+        if (x %% 1 == 0)  parMat[i, (which(chroms == x) + split)] <- 12 #demiploidy state1 even
+        if (x %% 1 != 0)  parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <- 13 #demiploidy state 1 odd
       }
       parMat[i, (i - split)] <- 7 #rediploidization
       # special case for last row
-      if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 7 #rediploidization
+      if (i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 7 #rediploidization
       parMat[i, (i + 1)] <- 3 #ascending aneuploidy - polyploids
       parMat[(i + 1), i] <- 4 #descending aneuploidy - polyploids
     }
   }
-  
+
   # BiSPCE 2 PLOIDY IS NOT THE HYPER STATE
-  if(hyper==T & polyploidy == F){
-    print("Constraining model with a hyper state that may have different rates of chromsome number evolution")
+  if (hyper == TRUE & polyploidy == FALSE) {
+    message("Constraining model with a hyper state that may have different rates of chromosome number evolution")
     # state 1 rates
-    for(i in 1:(split - 1)){
-      if((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms==(chroms[i]*2))] <- 5 #polyploidy - 1
+    for (i in 1:(split - 1)) {
+      if ((chroms[i] * 2) <= max(chroms)) parMat[i, which(chroms == (chroms[i] * 2))] <- 5 #polyploidy - 1
       # demiploidy
-      if((ceiling(chroms[i] * 1.5)) <= max(chroms)){
+      if ((ceiling(chroms[i] * 1.5)) <= max(chroms)) {
         x <- chroms[i] * 1.5
-        if(x %% 1 == 0)  parMat[i, which(chroms==x)] <- 10 #demiploidy state1 even
-        if(x %% 1 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- 11 #demiploidy state 1 odd
+        if (x %% 1 == 0)  parMat[i, which(chroms == x)] <- 10 #demiploidy state1 even
+        if (x %% 1 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- 11 #demiploidy state 1 odd
       }
-      parMat[i, (i+split)] <- 8 # transitions state 1->2
+      parMat[i, (i + split)] <- 8 # transitions state 1->2
       # special case for last row
-      if(i == (split - 1)) parMat[(i + 1), (i + 1 + split)] <- 8 # transitions state 2->1
+      if (i == (split - 1)) parMat[(i + 1), (i + 1 + split)] <- 8 # transitions state 1->2
       parMat[i, (i + 1)] <- 1 #ascending aneuploidy - 1
       parMat[(i + 1), i] <- 2 #descending aneuploidy - 1
-      
+
     }
     # state 2 rates
-    for(i in (split + 1):(nrow(parMat) - 1)){
-      if((chroms[i-split] * 2) <= max(chroms)) parMat[i, (which(chroms[i-split] * 2 == chroms) + split)] <- 6 #polyploidy-2
+    for (i in (split + 1):(nrow(parMat) - 1)) {
+      if ((chroms[i - split] * 2) <= max(chroms)) parMat[i, (which(chroms[i - split] * 2 == chroms) + split)] <- 6 #polyploidy-2
       # demiploidy
-      if((ceiling(chroms[i-split] * 1.5)) <= max(chroms)){
-        x <- chroms[i-split] * 1.5
-        if(x %% 1 == 0)  parMat[i, (which(chroms==x) + split)] <- 12 #demiploidy state1 even
-        if(x %% 1 != 0)  parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <- 13 #demiploidy state 2 odd
+      if ((ceiling(chroms[i - split] * 1.5)) <= max(chroms)) {
+        x <- chroms[i - split] * 1.5
+        if (x %% 1 == 0)  parMat[i, (which(chroms == x) + split)] <- 12 #demiploidy state1 even
+        if (x %% 1 != 0)  parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <- 13 #demiploidy state 2 odd
       }
       parMat[i, (i - split)] <- 9 #transition state 2->1
       # special case for last row
-      if(i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 9 # transitions state 2->1
+      if (i == (nrow(parMat) - 1)) parMat[(i + 1), (i + 1 - split)] <- 9 # transitions state 2->1
       parMat[i, (i + 1)] <- 3 #ascending aneuploidy - 2
       parMat[(i + 1), i] <- 4 #descending aneuploidy - 2
     }
   }
   # we now have a matrix with a number 1-13 that matches the rates present
-  # under one of our models we will use this to build our 
+  # under one of our models we will use this to build our
   # arguments for the standard diversitree constrain function
-  rate.table <- as.data.frame(matrix(,nrow(parMat) * ncol(parMat), 3))
-  rate.table[, 1] <- rep(as.character(row.names(parMat)), each=ncol(parMat))
+  rate.table <- as.data.frame(matrix(, nrow(parMat) * ncol(parMat), 3))
+  rate.table[, 1] <- rep(as.character(row.names(parMat)), each = ncol(parMat))
   rate.table[, 2] <- rep(as.character(colnames(parMat)), nrow(parMat))
   rate.table[, 3] <- as.character(c(t(parMat)))
-  rate.table <- rate.table[rate.table[, 1] != rate.table[2], ]
+  rate.table <- rate.table[rate.table[, 1] != rate.table[, 2], ]
   rate.table[rate.table[, 3] == 1, 3] <- "asc1"
   rate.table[rate.table[, 3] == 2, 3] <- "desc1"
   rate.table[rate.table[, 3] == 3, 3] <- "asc2"
@@ -223,29 +237,29 @@ constrainMuSSE <- function(data,
   rate.table[rate.table[, 3] == 11, 3] <- ".5*dem1"
   rate.table[rate.table[, 3] == 12, 3] <- "dem2"
   rate.table[rate.table[, 3] == 13, 3] <- ".5*dem2"
-  
-  
-  if(constrain$nometa == T){
+
+
+  if (constrain$nometa == TRUE) {
     rate.table[rate.table[, 3] == "asc2", 3] <- "asc1"
     rate.table[rate.table[, 3] == "desc2", 3] <- "desc1"
     rate.table[rate.table[, 3] == "pol2", 3] <- "pol1"
     rate.table[rate.table[, 3] == "dem2", 3] <- "dem1"
     rate.table[rate.table[, 3] == ".5*dem2", 3] <- ".5*dem1"
   }
-  
-  if(constrain$drop.poly == T){
+
+  if (constrain$drop.poly == TRUE) {
     rate.table[rate.table[, 3] == "pol1", 3] <- "0"
     rate.table[rate.table[, 3] == "pol2", 3] <- "0"
   }
-  
-  if(constrain$drop.demi == T){
+
+  if (constrain$drop.demi == TRUE) {
     rate.table[rate.table[, 3] == "dem1", 3] <- "0"
     rate.table[rate.table[, 3] == ".5*dem1", 3] <- "0"
     rate.table[rate.table[, 3] == "dem2", 3] <- "0"
     rate.table[rate.table[, 3] == ".5*dem2", 3] <- "0"
   }
-  
-  if(constrain$symmetric == T){
+
+  if (constrain$symmetric == TRUE) {
     rate.table[rate.table[, 3] == "desc1", 3] <- "asc1"
     rate.table[rate.table[, 3] == "desc2", 3] <- "asc2"
     rate.table[rate.table[, 3] == "pol2", 3] <- "pol1"
@@ -256,67 +270,106 @@ constrainMuSSE <- function(data,
     rate.table[rate.table[, 3] == ".5*dem2", 3] <- ".5*dem1"
   }
 
-  if(constrain$meta == "SYM"){
+  if (constrain$meta == "SYM") {
     rate.table[rate.table[, 3] == "tran21", 3] <- "tran12"
   }
-  
-  
 
-  formulae <- vector(mode="character", length=nrow(rate.table))
-  for(i in 1:nrow(rate.table)){
+  # Apply descriptive state names to rate parameters
+  if (!is.null(state.names)) {
+    s1 <- state.names[1]
+    s2 <- state.names[2]
+    name_map <- c(
+      "asc1"     = paste0("asc.", s1),
+      "asc2"     = paste0("asc.", s2),
+      "desc1"    = paste0("desc.", s1),
+      "desc2"    = paste0("desc.", s2),
+      "pol1"     = paste0("pol.", s1),
+      "pol2"     = paste0("pol.", s2),
+      "dem1"     = paste0("dem.", s1),
+      "dem2"     = paste0("dem.", s2),
+      ".5*dem1"  = paste0(".5*dem.", s1),
+      ".5*dem2"  = paste0(".5*dem.", s2),
+      "tran12"   = paste0("tran.", s1, ".to.", s2),
+      "tran21"   = paste0("tran.", s2, ".to.", s1)
+    )
+    for (old_name in names(name_map)) {
+      rate.table[rate.table[, 3] == old_name, 3] <- name_map[old_name]
+    }
+  }
+
+  formulae <- vector(mode = "character", length = nrow(rate.table))
+  for (i in 1:nrow(rate.table)) {
     formulae[i] <- paste("q",
-                         rate.table[i, 1], 
+                         rate.table[i, 1],
                          rate.table[i, 2],
                          " ~ ",
                          rate.table[i, 3],
-                         collapse="", sep="")
+                         collapse = "", sep = "")
   }
-  
-  ## This section could be sped up by getting rid of loop
-  
+
+  ## Lambda and Mu
   lambda <- mu <- vector()
-  # Lambda and Mu
-  for(i in 1:nrow(parMat)){
+  for (i in 1:nrow(parMat)) {
+    # Determine lambda/mu names based on state.names
+    lam1_name <- if (!is.null(state.names)) paste0("lambda.", state.names[1]) else "lambda1"
+    lam2_name <- if (!is.null(state.names)) paste0("lambda.", state.names[2]) else "lambda2"
+    mu1_name <- if (!is.null(state.names)) paste0("mu.", state.names[1]) else "mu1"
+    mu2_name <- if (!is.null(state.names)) paste0("mu.", state.names[2]) else "mu2"
+
     # no hyper state
-    if(hyper==F){
-      lambda <- c(lambda, paste("lambda", colnames(parMat)[i], " ~ lambda1", sep = ""))
-      mu <- c(mu, paste("mu", colnames(parMat)[i], " ~ mu1", sep = ""))
+    if (hyper == FALSE) {
+      lambda <- c(lambda, paste("lambda", colnames(parMat)[i], " ~ ", lam1_name, sep = ""))
+      mu <- c(mu, paste("mu", colnames(parMat)[i], " ~ ", mu1_name, sep = ""))
     }
     # hyper model with single lambda
-    if(hyper == T & s.lambda == T){
-      lambda <- c(lambda, paste("lambda", colnames(parMat)[i], " ~ lambda1", sep = ""))
+    if (hyper == TRUE & s.lambda == TRUE) {
+      lambda <- c(lambda, paste("lambda", colnames(parMat)[i], " ~ ", lam1_name, sep = ""))
     }
     # hyper model with single mu
-    if(hyper == T & s.mu == T){
-      mu <- c(mu, paste("mu", colnames(parMat)[i], " ~ mu1", sep = ""))
+    if (hyper == TRUE & s.mu == TRUE) {
+      mu <- c(mu, paste("mu", colnames(parMat)[i], " ~ ", mu1_name, sep = ""))
     }
     # hyper model with two lambdas
-    if(hyper == T & s.lambda == F){
-      if(i <= split){
-        lambda <- c(lambda, paste("lambda", colnames(parMat)[i], " ~ lambda1", sep = ""))
+    if (hyper == TRUE & s.lambda == FALSE) {
+      if (i <= split) {
+        lambda <- c(lambda, paste("lambda", colnames(parMat)[i], " ~ ", lam1_name, sep = ""))
       }
-      if(i > split){
-        lambda <- c(lambda, paste("lambda", colnames(parMat)[i], " ~ lambda2", sep = ""))
+      if (i > split) {
+        lambda <- c(lambda, paste("lambda", colnames(parMat)[i], " ~ ", lam2_name, sep = ""))
       }
     }
     # hyper model with two mus
-    if(hyper == T & s.mu == F){
-      if(i <= split){
-        mu <- c(mu, paste("mu", colnames(parMat)[i], " ~ mu1", sep = ""))
+    if (hyper == TRUE & s.mu == FALSE) {
+      if (i <= split) {
+        mu <- c(mu, paste("mu", colnames(parMat)[i], " ~ ", mu1_name, sep = ""))
       }
-      if(i > split){
-        mu <- c(mu, paste("mu", colnames(parMat)[i], " ~ mu2", sep = ""))
+      if (i > split) {
+        mu <- c(mu, paste("mu", colnames(parMat)[i], " ~ ", mu2_name, sep = ""))
       }
     }
   }
-  # lets store these in realy obvious names
-    extras <- c("asc1", "desc1", "asc2", "desc2", 
-              "pol1", "pol2", "dem1", "dem2", "redip", "tran12", "tran21", 
-              "lambda1", "mu1", "lambda2", "mu2")
-  lik.con <- constrain(lik, formulae=c(formulae, lambda, mu), extra=extras)
+
+  # Build extras vector with appropriate names
+  if (!is.null(state.names)) {
+    s1 <- state.names[1]
+    s2 <- state.names[2]
+    extras <- c(paste0("asc.", s1), paste0("desc.", s1),
+                paste0("asc.", s2), paste0("desc.", s2),
+                paste0("pol.", s1), paste0("pol.", s2),
+                paste0("dem.", s1), paste0("dem.", s2),
+                "redip",
+                paste0("tran.", s1, ".to.", s2),
+                paste0("tran.", s2, ".to.", s1),
+                paste0("lambda.", s1), paste0("mu.", s1),
+                paste0("lambda.", s2), paste0("mu.", s2))
+  } else {
+    extras <- c("asc1", "desc1", "asc2", "desc2",
+                "pol1", "pol2", "dem1", "dem2", "redip", "tran12", "tran21",
+                "lambda1", "mu1", "lambda2", "mu2")
+  }
+
+  lik.con <- constrain(lik, formulae = c(formulae, lambda, mu), extra = extras)
   colnames(parMat) <- rownames(parMat) <- colnames(data)
-  if(verbose==T) return(list(lik.con, parMat))
-  if(verbose==F) return(lik.con)
+  if (verbose == TRUE) return(list(lik.con, parMat))
+  if (verbose == FALSE) return(lik.con)
 }
-
-

@@ -4,23 +4,47 @@
 \alias{simChrom}
 \title{Simulate Chromosome Number Evolution on a Phylogeny}
 \usage{
-simChrom(tree, pars, limits = NULL, model = NULL, Qmat = NULL, verbose = F)
+simChrom(
+  tree,
+  pars,
+  limits = NULL,
+  model = NULL,
+  Qmat = NULL,
+  verbose = FALSE,
+  state.names = NULL
+)
 }
 \arguments{
 \item{tree}{A phylogenetic tree of class \code{"phylo"}.}
 
-\item{pars}{Numeric vector of model parameters. Length depends on the model:
+\item{pars}{Parameter values for the model. Can be either:
+\describe{
+\item{Unnamed numeric vector}{Positional parameters (original behavior).
+Length depends on the model:
 \describe{
 \item{\code{"2010"} (length 5)}{gain, loss, demiploidy, polyploidy, root
 chromosome number}
-\item{\code{"ChromPlus"} or \code{"SAF"} (length 12)}{gain1, gain2, loss1, loss2,
-demiploidy1, demiploidy2, polyploidy1, polyploidy2, transition 1->2,
-transition 2->1, root chromosome number, root binary state (0 or 1)}
+\item{\code{"ChromPlus"} or \code{"SAF"} (length 12)}{gain1, gain2, loss1,
+loss2, demiploidy1, demiploidy2, polyploidy1, polyploidy2,
+transition 1->2, transition 2->1, root chromosome number, root
+binary state (0 or 1)}
 \item{\code{"PloidEvol"} (length 11)}{gain-diploid, gain-polyploid,
-loss-diploid, loss-polyploid, demiploidy-diploid, demiploidy-polyploid,
-polyploidy-diploid, polyploidy-polyploid, rediploidization, root
-chromosome number, root ploidy state (0=diploid, 1=polyploid)}
+loss-diploid, loss-polyploid, demiploidy-diploid,
+demiploidy-polyploid, polyploidy-diploid, polyploidy-polyploid,
+rediploidization, root chromosome number, root ploidy state
+(0=diploid, 1=polyploid)}
 \item{\code{NULL} with Qmat (length 1)}{root chromosome number}
+}
+}
+\item{Named numeric vector}{Parameters identified by name rather than
+position. Names can use numeric suffixes (e.g. \code{asc1}, \code{desc2}) or
+descriptive labels matching \code{state.names} (e.g. \code{asc.matched},
+\code{desc.mismatched}). For \code{"2010"} model: \code{asc}, \code{desc}, \code{dem}, \code{pol},
+\code{root.chrom}. For \code{"ChromPlus"}/\code{"SAF"}: \code{asc1}, \code{asc2}, \code{desc1},
+\code{desc2}, \code{dem1}, \code{dem2}, \code{pol1}, \code{pol2}, \code{tran12}, \code{tran21},
+\code{root.chrom}, \code{root.state}. For \code{"PloidEvol"}: \code{asc1}, \code{asc2},
+\code{desc1}, \code{desc2}, \code{dem1}, \code{dem2}, \code{pol1}, \code{pol2}, \code{redip},
+\code{root.chrom}, \code{root.state}.}
 }}
 
 \item{limits}{Numeric vector of length 2 with the minimum and maximum
@@ -36,6 +60,11 @@ are automatically set. Only used when \code{model = NULL}.}
 
 \item{verbose}{Logical. If \code{TRUE}, the parameter matrix used to build the
 model is also returned. Defaults to \code{FALSE}.}
+
+\item{state.names}{An optional character vector of length 2 giving
+descriptive names for the two binary states, e.g. \code{c("matched", "mismatched")}. When provided, output uses these labels instead of
+0/1 for binary states. Also allows named \code{pars} to use these labels.
+Defaults to \code{NULL}.}
 }
 \value{
 Depends on the model:
@@ -43,12 +72,11 @@ Depends on the model:
 \item{\code{"2010"} or \code{NULL}}{A named numeric vector of chromosome numbers
 at tree tips. If \code{verbose = TRUE}, a list with \code{chrom.num} and
 \code{parameter.matrix}.}
-\item{\code{"ChromPlus"}}{A list with \code{binary.state} (0/1 vector) and
-\code{chrom.num}. If \code{verbose = TRUE}, also includes \code{parameter.matrix}.}
-\item{\code{"PloidEvol"}}{A list with \code{ploidy.state} (0/1 vector) and
-\code{chrom.num}. If \code{verbose = TRUE}, also includes \code{parameter.matrix}.}
-\item{\code{"SAF"}}{A list with \code{fusion.state} (0/1 vector) and
-\code{chrom.num}. If \code{verbose = TRUE}, also includes \code{parameter.matrix}.}
+\item{\code{"ChromPlus"}}{A list with \code{binary.state} (labeled with
+\code{state.names} if provided, otherwise 0/1) and \code{chrom.num}. If
+\code{verbose = TRUE}, also includes \code{parameter.matrix}.}
+\item{\code{"PloidEvol"}}{A list with \code{ploidy.state} and \code{chrom.num}.}
+\item{\code{"SAF"}}{A list with \code{fusion.state} and \code{chrom.num}.}
 }
 }
 \description{
@@ -65,10 +93,17 @@ result <- simChrom(tree = tree,
                    limits = c(3, 12), model = "2010")
 head(result)
 
-# ChromPlus model with binary trait
+# ChromPlus model with named parameters and state labels
 result2 <- simChrom(tree = tree,
-  pars = c(0.1, 0.1, 0.1, 0.1, 0, 0, 0.01, 0.01, 0.05, 0.05, 5, 0),
-  limits = c(3, 12), model = "ChromPlus")
+  pars = c(asc.matched = 0.1, asc.mismatched = 0.1,
+           desc.matched = 0.1, desc.mismatched = 0.1,
+           dem.matched = 0, dem.mismatched = 0,
+           pol.matched = 0.01, pol.mismatched = 0.01,
+           tran.matched.to.mismatched = 0.05,
+           tran.mismatched.to.matched = 0.05,
+           root.chrom = 5, root.state = 0),
+  limits = c(3, 12), model = "ChromPlus",
+  state.names = c("matched", "mismatched"))
 table(result2$binary.state)
 }
 

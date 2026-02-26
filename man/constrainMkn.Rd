@@ -7,12 +7,13 @@
 constrainMkn(
   data,
   lik,
-  hyper = T,
-  polyploidy = F,
-  verbose = F,
-  oneway = F,
-  constrain = list(drop.poly = F, drop.demi = F, symmetric = F, nometa = F, saf.model =
-    F, sym.hyperstates = F, meta = "ARD")
+  hyper = TRUE,
+  polyploidy = FALSE,
+  verbose = FALSE,
+  oneway = FALSE,
+  state.names = NULL,
+  constrain = list(drop.poly = FALSE, drop.demi = FALSE, symmetric = FALSE, nometa =
+    FALSE, saf.model = FALSE, sym.hyperstates = FALSE, meta = "ARD")
 )
 }
 \arguments{
@@ -34,6 +35,12 @@ rate table. Defaults to \code{FALSE}.}
 
 \item{oneway}{Logical. If \code{TRUE}, the transition rate from state 2 back to
 state 1 is set to zero. Defaults to \code{FALSE}.}
+
+\item{state.names}{An optional character vector of length 2 giving
+descriptive names for the two binary states, e.g. \code{c("matched", "mismatched")} or \code{c("diploid", "polyploid")}. When provided, all
+parameter names use these labels (e.g. \code{asc.matched} instead of \code{asc1},
+\code{tran.matched.to.mismatched} instead of \code{tran12}). Defaults to \code{NULL}
+(numeric suffixes).}
 
 \item{constrain}{A list of additional model constraints. Can include:
 \describe{
@@ -71,7 +78,9 @@ evolution rates. Additionally supports a sex chromosome-autosome fusion
 (SAF) model.
 }
 \details{
-The rates in the model are:
+The rates in the model are (shown with default numeric suffixes; when
+\code{state.names} is provided, the suffixes are replaced with descriptive
+labels):
 \describe{
 \item{asc1/asc2}{Ascending aneuploidy in state 1/2}
 \item{desc1/desc2}{Descending aneuploidy in state 1/2}
@@ -100,6 +109,23 @@ lik <- make.mkn(tree, states = dat.mat, k = ncol(dat.mat),
 con.lik <- constrainMkn(data = dat.mat, lik = lik, hyper = FALSE,
                          constrain = list(drop.demi = TRUE))
 argnames(con.lik)
+
+# With descriptive state names
+dat2 <- data.frame(
+  species = paste0("sp", 1:5),
+  chrom = c(5, 6, 7, 8, 10),
+  prob = c(0.8, 0.6, 0.9, 0.5, 1.0)
+)
+dat.mat2 <- datatoMatrix(x = dat2, hyper = TRUE)
+tree2 <- ape::rcoal(5, tip.label = dat2$species)
+lik2 <- make.mkn(tree2, states = dat.mat2, k = ncol(dat.mat2),
+                 strict = FALSE, control = list(method = "ode"))
+con.lik2 <- constrainMkn(data = dat.mat2, lik = lik2, hyper = TRUE,
+                          state.names = c("matched", "mismatched"),
+                          constrain = list(drop.demi = TRUE,
+                                           drop.poly = TRUE))
+argnames(con.lik2)
+# Returns: "asc.matched" "desc.matched" "asc.mismatched" ...
 }
 
 }
