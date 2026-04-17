@@ -132,6 +132,13 @@ constrainMkn <- function(data,
     if (!is.character(state.names) || length(state.names) != 2) {
       stop("state.names must be a character vector of length 2")
     }
+  } else if (isTRUE(hyper)) {
+    message("constrainMkn: state.names not provided. Output rates will use ",
+            "'1'/'2' suffixes, where suffix '1' refers to the FIRST half of ",
+            "the columns of `data` (the half without the 'h' suffix from ",
+            "datatoMatrix) and '2' refers to the second half. Pass ",
+            "state.names = c(\"name1\", \"name2\") to get unambiguous rate ",
+            "names like asc.name1 / asc.name2.")
   }
 
   # This fills out the list of constraints the default are no constraints
@@ -144,10 +151,8 @@ constrainMkn <- function(data,
   if (is.null(constrain$meta)) constrain$meta <- "ARD"
 
   ## BUILD AN EMPTY MATRIX MATCHING OUR MODEL
-  # create and store variable for padding rate names
-  if (ncol(data) < 100) pad <- 2
-  if (ncol(data) >= 100) pad <- 3
-  if (ncol(data) < 10) pad <- 1
+  # padding rate names so column labels sort as strings
+  pad <- nchar(as.character(ncol(data)))
 
   # make the matrix of rates
   parMat <- matrix(0, ncol(data), ncol(data))
@@ -399,15 +404,8 @@ constrainMkn <- function(data,
     }
   }
 
-  formulae <- vector(mode = "character", length = nrow(rate.table))
-  for (i in 1:nrow(rate.table)) {
-    formulae[i] <- paste("q",
-                         rate.table[i, 1],
-                         rate.table[i, 2],
-                         " ~ ",
-                         rate.table[i, 3],
-                         collapse = "", sep = "")
-  }
+  formulae <- paste0("q", rate.table[, 1], rate.table[, 2], " ~ ",
+                     rate.table[, 3])
 
   # Build extras vector with appropriate names
   if (!is.null(state.names)) {
@@ -430,11 +428,8 @@ constrainMkn <- function(data,
                 "tranSAF", "tranRo")
   }
 
-  # Update parameter matrix to match rate table
-  for (i in 1:nrow(rate.table)) {
-    parMat[paste0("", rate.table[i, 1], ""), paste0("", rate.table[i, 2], "")] <-
-      rate.table[i, 3]
-  }
+  # Update parameter matrix to match rate table (character coerces whole matrix)
+  parMat[as.matrix(rate.table[, 1:2])] <- rate.table[, 3]
 
   lik.con <- constrain(lik, formulae = formulae, extra = extras)
   colnames(parMat) <- rownames(parMat) <- colnames(data)

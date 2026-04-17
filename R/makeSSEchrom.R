@@ -77,47 +77,41 @@ makeSSEchrom <- function(h,                 # max haploid number
     if (!is.character(state.names) || length(state.names) != 2) {
       stop("state.names must be a character vector of length 2")
     }
+  } else {
+    message("makeSSEchrom: state.names not provided. The returned binary.char ",
+            "will use 0/1, where 0 = the state with rates (lambda1, mu1, asc1, ",
+            "desc1, trans1 out of state) and 1 = the state with rates (lambda2, ",
+            "mu2, asc2, desc2, trans2 out of state). Pass state.names = ",
+            "c(\"name1\", \"name2\") to label tips with descriptive names.")
   }
 
   # internal function to make parameter string
   make.pars <- function(k, lambda1, lambda2, mu1, mu2,
                         asc1, asc2, desc1, desc2, trans1, trans2) {
-    m <- matrix(rep(0, k^2), k, k)
-    for (r in 1:k) {
-      for (c in 1:k) {
-        if (r <= (k / 2)) {        # upper half
-          if (c <= (k / 2)) {      # left half
-            if (r == (c - 1)) m[r, c] <- "asc1"
-            if (r == (c + 1)) m[r, c] <-  "dsc1"
-          }
-          if (c > (k / 2)) {         # right half
-            if ((r + (k / 2)) == c) m[r, c] <- "trans1"
-          }
-        }
-        if (r > (k / 2)) {         # lower half
-          if (c <= (k / 2)) {      # left half
-            if (r == (c + (k / 2)))  m[r, c] <- "trans2"
-          }
-          if (c > (k / 2)) {       # right half
-            if (r == (c - 1)) m[r, c] <- "asc2"
-            if (r == (c + 1)) m[r, c] <-  "dsc2"
-          }
-        }
-      }
-    }
-    m[m == "asc1"] <- asc1
-    m[m == "asc2"] <- asc2
-    m[m == "dsc1"] <- desc1
-    m[m == "dsc2"] <- desc2
-    m[m == "trans1"] <- trans1
-    m[m == "trans2"] <- trans2
+    # Vectorised fill of the k x k rate matrix. Layout:
+    #   rows/cols 1..k/2       = binary state 1, chromosome 1..k/2
+    #   rows/cols (k/2+1)..k   = binary state 2, chromosome 1..k/2
+    h <- k / 2
+    m <- matrix(0, k, k)
+    # state-1 aneuploidy (upper-left block)
+    i1 <- seq_len(h - 1)
+    m[cbind(i1,     i1 + 1)] <- asc1
+    m[cbind(i1 + 1, i1    )] <- desc1
+    # state-2 aneuploidy (lower-right block)
+    i2 <- h + seq_len(h - 1)
+    m[cbind(i2,     i2 + 1)] <- asc2
+    m[cbind(i2 + 1, i2    )] <- desc2
+    # cross-block transitions on the k/2-offset diagonal
+    i <- seq_len(h)
+    m[cbind(i,     i + h)] <- trans1  # state 1 -> state 2
+    m[cbind(i + h, i    )] <- trans2  # state 2 -> state 1
 
     diag(m) <- NA
-    z <- as.vector(t(m))
-    z <- as.numeric(z[!is.na(z)])
-    par.vals <- c(rep(lambda1, times = (k / 2)), rep(lambda2, times = (k / 2)),
-                  rep(mu1, times = (k / 2)), rep(mu2, times = (k / 2)), z)
-    return(as.numeric(par.vals))
+    z <- as.numeric(t(m)[!is.na(t(m))])
+    par.vals <- c(rep(lambda1, h), rep(lambda2, h),
+                  rep(mu1, h),     rep(mu2, h),
+                  z)
+    return(par.vals)
   }
 
   # internal function to convert from musse to chromosomes

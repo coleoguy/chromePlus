@@ -81,18 +81,29 @@ head(sim1)
 ```
 
 ```{r simulate-chromplus}
-# Simulate under the ChromPlus model with a binary trait
-# Parameters: gain1, gain2, loss1, loss2, demi1, demi2, poly1, poly2,
-#             trans12, trans21, root chrom, root state
+# Simulate under the ChromPlus model with a binary trait.
+# Passing state.names removes the asc1/asc2 ambiguity: asc.matched is the
+# ascending rate while in the "matched" state, and likewise for "mismatched".
+# state.names[1] maps to the first half of the Q-matrix (numeric 0 in the
+# unlabeled output); state.names[2] maps to the second half (numeric 1).
 sim2 <- simChrom(tree = tree,
-  pars = c(0.1, 0.15, 0.08, 0.12, 0, 0, 0.01, 0.02, 0.05, 0.05, 7, 0),
+  pars = c(asc.matched = 0.1,     asc.mismatched = 0.15,
+           desc.matched = 0.08,   desc.mismatched = 0.12,
+           dem.matched = 0,       dem.mismatched = 0,
+           pol.matched = 0.01,    pol.mismatched = 0.02,
+           tran.matched.to.mismatched = 0.05,
+           tran.mismatched.to.matched = 0.05,
+           root.chrom = 7, root.state = 0),
   limits = c(3, 15),
-  model = "ChromPlus")
+  model = "ChromPlus",
+  state.names = c("matched", "mismatched"))
 table(sim2$binary.state)
 ```
 
 ```{r simulate-sse}
-# Simulate both tree and data under an SSE model
+# Simulate both tree and data under an SSE model.
+# Pass state.names so the returned binary.char is labeled with the state
+# names rather than 0/1.
 set.seed(42)
 sse_result <- makeSSEchrom(
   h = 15, lambda1 = 0.3, lambda2 = 0.3,
@@ -100,7 +111,8 @@ sse_result <- makeSSEchrom(
   asc1 = 0.1, asc2 = 0.1,
   desc1 = 0.1, desc2 = 0.1,
   trans1 = 0.05, trans2 = 0.05,
-  max.taxa = 30, x0 = 7
+  max.taxa = 30, x0 = 7,
+  state.names = c("matched", "mismatched")
 )
 plot(sse_result$tree, cex = 0.7)
 ```

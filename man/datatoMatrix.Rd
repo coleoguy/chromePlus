@@ -4,7 +4,7 @@
 \alias{datatoMatrix}
 \title{Convert Tip Data to a Probability Matrix}
 \usage{
-datatoMatrix(x, range = NULL, hyper = TRUE, buffer = 0)
+datatoMatrix(x, range = NULL, hyper = TRUE, buffer = 0, state.names = NULL)
 }
 \arguments{
 \item{x}{A data frame with at least 2 columns:
@@ -12,8 +12,12 @@ datatoMatrix(x, range = NULL, hyper = TRUE, buffer = 0)
 \item{Column 1}{Character. Species names.}
 \item{Column 2}{Numeric. Chromosome counts (will be rounded to whole
 numbers if non-integer).}
-\item{Column 3}{Numeric. Probability of being in binary state 1
-(required when \code{hyper = TRUE}). Values should be between 0 and 1.}
+\item{Column 3}{Numeric. Probability of being in the FIRST binary
+state (i.e. the state whose columns appear in the left half of the
+returned matrix, and which downstream chromePlus functions refer to
+with a \code{1} suffix or with \code{state.names[1]}). Required when
+\code{hyper = TRUE}. Values should be between 0 and 1; the second-state
+probability is computed as \code{1 - prob}.}
 }}
 
 \item{range}{Numeric vector of length 2 giving the minimum and maximum
@@ -26,12 +30,19 @@ and the matrix is doubled in width.}
 
 \item{buffer}{Integer. Number of chromosome states to add above and below the
 observed range. Only used when \code{range = NULL}. Defaults to \code{0}.}
+
+\item{state.names}{Optional character vector of length 2 giving descriptive
+names for the two binary states. When provided, columns for the second
+hyperstate are suffixed with \code{state.names[2]} (joined by \code{.}) instead of
+\code{"h"}, making the output self-documenting. \code{state.names[1]} corresponds
+to the left half / \code{prob} column from \code{x}. Defaults to \code{NULL}.}
 }
 \value{
 A numeric matrix with species as rows and chromosome states as
 columns. Column names are the chromosome numbers (and, when
 \code{hyper = TRUE}, chromosome numbers suffixed with \code{"h"} for the second
-hyperstate). Row names are the species names from \code{x}.
+hyperstate, or with \code{state.names[2]} if \code{state.names} is provided). Row
+names are the species names from \code{x}.
 }
 \description{
 Converts a data frame of species names, chromosome counts, and (optionally)

@@ -1,0 +1,131 @@
+---
+title: "Worked example: simulated beetle clade"
+author: "Heath Blackmon"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Worked example: simulated beetle clade}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 4
+)
+```
+
+This vignette walks through a complete chromePlus analysis end-to-end on
+a non-trivial dataset: a simulated 100-species beetle clade where
+chromosome number evolves jointly with a binary sex-chromosome-system
+trait (standard vs. fused). The whole analysis runs in under a minute on
+a modern laptop.
+
+The data are simulated (see `?beetleChrom`) and ship with the package so
+you don't need to download anything.
+
+## Load the data
+
+```{r load}
+library(chromePlus)
+library(diversitree)
+library(ape)
+
+data(beetleChrom)
+tree <- beetleChrom$tree
+dat  <- beetleChrom$data
+
+# Ntip and counts
+ape::Ntip(tree)
+table(dat$state)
+table(dat$chrom)
+```
+
+A quick look:
+
+```{r peek}
+head(dat)
+```
+
+## Build the probability matrix
+
+`datatoMatrix()` turns the tidy data frame into the probability matrix
+that `diversitree` expects. Because we want a binary trait in the
+model we use `hyper = TRUE`, and we pass `state.names` so every
+downstream object (columns of the matrix, parameter names of the fit)
+is self-documenting — no more guessing whether "asc1" is the rate in
+the standard or fused state.
+
+```{r datamat}
+dat.mat <- datatoMatrix(
+  x     = dat[, c("species", "chrom", "prob")],
+  hyper = TRUE,
+  state.names = c("standard", "fused")
+)
+dim(dat.mat)
+colnames(dat.mat)[c(1:4, (ncol(dat.mat) - 3):ncol(dat.mat))]
+```
+
+The left half of the columns is the "standard" state; the right half
+carries the `.fused` suffix because we asked for descriptive names.
+
+## Fit an mkn chromosome-evolution model
+
+```{r fit-mkn, cache = TRUE}
+lik <- make.mkn(tree, states = dat.mat, k = ncol(dat.mat),
+                strict = FALSE, control = list(method = "ode"))
+
+con.lik <- constrainMkn(
+  data  = dat.mat,
+  lik   = lik,
+  hyper = TRUE,
+  state.names = c("standard", "fused"),
+  constrain = list(drop.demi = TRUE, drop.poly = TRUE)
+)
+
+argnames(con.lik)
+```
+
+Thanks to `state.names`, the returned parameters are `asc.standard`,
+`asc.fused`, `desc.standard`, `desc.fused`, `tran.standard.to.fused`,
+and `tran.fused.to.standard`. Nothing is named `asc1` or `asc2` and
+nothing is numerically ambiguous.
+
+```{r mle, cache = TRUE}
+set.seed(1)
+sv <- setNames(startVals(n = length(argnames(con.lik)),
+                         min = 0.01, max = 0.1),
+               argnames(con.lik))
+fit <- find.mle(con.lik, sv, method = "subplex",
+                control = list(maxit = 2000))
+round(coef(fit), 4)
+```
+
+The rate names in `coef(fit)` are the same descriptive labels, so you
+can read the fitted values directly: how fast chromosome number goes
+up in each state, how fast it goes down, and how fast the
+sex-chromosome-system transitions happen in each direction.
+
+## Visualise the tree coloured by state
+
+```{r plot, fig.height = 7}
+state_col <- ifelse(dat$state[match(tree$tip.label, dat$species)] ==
+                    "standard", "steelblue", "tomato")
+plot(tree, tip.color = state_col, cex = 0.4, no.margin = TRUE)
+legend("bottomleft",
+       legend = c("standard", "fused"),
+       text.col = c("steelblue", "tomato"),
+       bty = "n")
+```
+
+## What to try next
+
+* Fit the same data under `constrainMuSSE()` to let speciation and
+  extinction depend on the binary state.
+* Re-fit with `constrain = list(nometa = TRUE)` to ask whether the
+  state actually matters for chromosome evolution — compare likelihoods.
+* Swap your real data into `datatoMatrix()` with the same `state.names`
+  convention.

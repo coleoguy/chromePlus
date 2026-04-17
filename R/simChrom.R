@@ -103,6 +103,13 @@ simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL,
     if (!is.character(state.names) || length(state.names) != 2) {
       stop("state.names must be a character vector of length 2")
     }
+  } else if (!is.null(model) && model %in% c("ChromPlus", "SAF", "PloidEvol")) {
+    message("simChrom: state.names not provided. In the positional pars ",
+            "vector, the '1' suffix refers to the FIRST half of the ",
+            "Q-matrix (state 0 in the returned binary.state / ploidy.state / ",
+            "fusion.state vector) and '2' to the second half. Pass ",
+            "state.names = c(\"name1\", \"name2\") for unambiguous output ",
+            "labels.")
   }
 
   # Resolve named pars to positional vector
@@ -137,10 +144,8 @@ simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL,
     message("building q-matrix")
     if (length(pars) != 12) stop("pars should have length of 12")
     # set up an empty matrix
-    if (limits[2] < 100) pad <- 2
-    if (limits[2] >= 100) pad <- 3
-    if (limits[2] < 10) pad <- 1
     parMat <- matrix(0, 2 * length(limits[1]:limits[2]), 2 * length(limits[1]:limits[2]))
+    pad <- nchar(as.character(ncol(parMat)))
     colnames(parMat) <- sprintf(paste('%0', pad, 'd', sep = ""), 1:ncol(parMat))
     rownames(parMat) <- colnames(parMat)
     split <- ncol(parMat) / 2
@@ -192,10 +197,8 @@ simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL,
     message("building q-matrix")
     if (length(pars) != 11) stop("pars should have length of 11")
     # set up an empty matrix
-    if (limits[2] < 100) pad <- 2
-    if (limits[2] >= 100) pad <- 3
-    if (limits[2] < 10) pad <- 1
     parMat <- matrix(0, 2 * length(limits[1]:limits[2]), 2 * length(limits[1]:limits[2]))
+    pad <- nchar(as.character(ncol(parMat)))
     colnames(parMat) <- sprintf(paste('%0', pad, 'd', sep = ""), 1:ncol(parMat))
     rownames(parMat) <- colnames(parMat)
     split <- ncol(parMat) / 2
@@ -222,24 +225,24 @@ simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL,
     for (i in (split + 1):(nrow(parMat) - 1)) {
       parMat[i, (i + 1)] <- pars[2] + parMat[i, (i + 1)] #ascending aneuploidy - 2
       parMat[(i + 1), i] <- pars[4] + parMat[(i + 1), i] #descending aneuploidy - 2
-    }
-    #polyploidy-2
-    if ((chroms[i - split] * 2) <= max(chroms)) {
-      parMat[i, (which(chroms[i - split] * 2 == chroms) + split)] <-
-        pars[8] + parMat[i, (which(chroms[i - split] * 2 == chroms) + split)]
-    }
-    # demiploidy-2
-    if ((ceiling(chroms[i - split] * 1.5)) <= max(chroms)) {
-      x <- chroms[i - split] * 1.5
-      #demiploidy-2 even
-      if (x %% 1 == 0) {
-        parMat[i, (which(chroms == x) + split)] <-
-          pars[6] + parMat[i, (which(chroms == x) + split)]
+      #polyploidy-2
+      if ((chroms[i - split] * 2) <= max(chroms)) {
+        parMat[i, (which(chroms[i - split] * 2 == chroms) + split)] <-
+          pars[8] + parMat[i, (which(chroms[i - split] * 2 == chroms) + split)]
       }
-      #demiploidy-2 odd
-      if (x %% 1 != 0) {
-        parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <-
-          (pars[6] / 2) + parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)]
+      # demiploidy-2
+      if ((ceiling(chroms[i - split] * 1.5)) <= max(chroms)) {
+        x <- chroms[i - split] * 1.5
+        #demiploidy-2 even
+        if (x %% 1 == 0) {
+          parMat[i, (which(chroms == x) + split)] <-
+            pars[6] + parMat[i, (which(chroms == x) + split)]
+        }
+        #demiploidy-2 odd
+        if (x %% 1 != 0) {
+          parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)] <-
+            (pars[6] / 2) + parMat[i, (which(chroms %in% c(floor(x), ceiling(x))) + split)]
+        }
       }
       # rediploidization
       parMat[i, (i - split)] <- pars[9]
@@ -262,10 +265,8 @@ simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL,
     message("building q-matrix")
     if (length(pars) != 12) stop("pars should have length of 12")
     # set up an empty matrix
-    if (limits[2] < 100) pad <- 2
-    if (limits[2] >= 100) pad <- 3
-    if (limits[2] < 10) pad <- 1
     parMat <- matrix(0, 2 * length(limits[1]:limits[2]), 2 * length(limits[1]:limits[2]))
+    pad <- nchar(as.character(ncol(parMat)))
     colnames(parMat) <- sprintf(paste('%0', pad, 'd', sep = ""), 1:ncol(parMat))
     rownames(parMat) <- colnames(parMat)
     split <- ncol(parMat) / 2
@@ -281,7 +282,11 @@ simChrom <- function(tree, pars, limits = NULL, model = NULL, Qmat = NULL,
         if (x %% 1 == 0)  parMat[i, which(chroms == x)] <- parMat[i, which(chroms == x)] + pars[5] #demiploidy state1 even
         if (x %% 1 != 0)  parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] <- parMat[i, which(chroms %in% c(floor(x), ceiling(x)))] + (pars[5] / 2) #demiploidy state 1 odd
       }
-      parMat[i, (i + split - 1)] <- pars[9] # transitions state 1->2
+      # SAF transitions reduce chromosome count by 1 on fusion, so the
+      # off-diagonal target is (i + split - 1). Column (i + split - 1) only
+      # makes sense for i > 1 (otherwise it points back into the state-1
+      # half). This matches constrainMkn's SAF model.
+      if (i > 1) parMat[i, (i + split - 1)] <- pars[9] # transitions state 1->2
       # special case for last row
       if (i == (split - 1)) parMat[(i + 1), (i + split)] <- pars[9] # transitions state 1->2
 
