@@ -110,13 +110,16 @@ con.lik <- constrainMkn(data = dat.mat, lik = lik, hyper = FALSE,
                          constrain = list(drop.demi = TRUE))
 argnames(con.lik)
 
-# With descriptive state names
+# With descriptive state names. Note: make.mkn requires deterministic
+# tip-state assignments (prob must be 0 or 1). For probabilistic tip
+# states use make.musse / constrainMuSSE instead.
 dat2 <- data.frame(
   species = paste0("sp", 1:5),
   chrom = c(5, 6, 7, 8, 10),
-  prob = c(0.8, 0.6, 0.9, 0.5, 1.0)
+  prob = c(1, 0, 1, 0, 1)
 )
-dat.mat2 <- datatoMatrix(x = dat2, hyper = TRUE)
+dat.mat2 <- datatoMatrix(x = dat2, hyper = TRUE,
+                         state.names = c("matched", "mismatched"))
 tree2 <- ape::rcoal(5, tip.label = dat2$species)
 lik2 <- make.mkn(tree2, states = dat.mat2, k = ncol(dat.mat2),
                  strict = FALSE, control = list(method = "ode"))
