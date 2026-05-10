@@ -32,7 +32,10 @@ Imports:
     ggplot2,
     coda,
     stats,
-    viridis
+    viridis,
+    Rcpp
+LinkingTo:
+    Rcpp
 Suggests:
     ape,
     knitr,

@@ -7,3 +7,10 @@ inst/doc
 .DS_Store
 /doc/
 /Meta/
+src/*.o
+src/*.so
+src/*.dll
+src/*.dylib
+src/symbols.rds
+vignettes/*.html
+.claude/

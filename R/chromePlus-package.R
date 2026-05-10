@@ -9,5 +9,7 @@
 #' @importFrom coda as.mcmc HPDinterval
 #' @importFrom stats density runif rnorm
 #' @importFrom viridis viridis
+#' @useDynLib chromePlus, .registration = TRUE
+#' @importFrom Rcpp sourceCpp
 ## usethis namespace: end
 NULL

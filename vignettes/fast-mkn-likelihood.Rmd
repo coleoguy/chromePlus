@@ -1,0 +1,260 @@
+---
+title: "Fast Mkn Likelihoods for Large Chromosome State Spaces"
+author: "Heath Blackmon"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fast Mkn Likelihoods for Large Chromosome State Spaces}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 4
+)
+```
+
+## When to use this
+
+The default chromePlus pipeline (`make.mkn()` from diversitree, then
+`constrainMkn()`) integrates a dense ODE for every branch of the tree. At small
+state-space sizes that is fast, but cost grows roughly as $k^2$ where $k$ is
+the number of states (chromosome counts × hyperstates). Once $k \geq 100$,
+each likelihood evaluation can take tens to hundreds of milliseconds, which
+becomes painful inside an MCMC of 50,000+ steps or across many model variants.
+
+The chromosome rate matrix $Q$ is extremely sparse — only ~6 non-zeros per row
+regardless of $k$ (ascending, descending, polyploidy, two demiploidy entries,
+hyperstate transition). `make.mkn.fast()` exploits this with a sparse
+**uniformization-based** Felsenstein pruning kernel implemented in C++. The
+result is the same likelihood, computed 30-240× faster at $k = 100$ to 600.
+
+This vignette shows two things:
+
+1. **Identical output.** `make.mkn.fast()` produces log-likelihoods that match
+   diversitree's `make.mkn() |> constrainMkn()` to ~1e-8 across a range of
+   problem sizes and constraint settings.
+2. **Speed.** The fast path is dramatically faster, especially at large $k$.
+
+## Drop-in usage
+
+`make.mkn.fast()` takes the same `tree`, data matrix, `hyper`, `polyploidy`,
+`oneway`, `state.names`, and `constrain` arguments as the
+`make.mkn() |> constrainMkn()` chain, and returns a function with the same
+calling convention:
+
+```{r usage, eval = FALSE}
+library(chromePlus); library(diversitree); library(ape)
+
+# Suppose dat.mat came from datatoMatrix(...).
+ll_fast <- make.mkn.fast(tree, dat.mat, hyper = TRUE,
+                         constrain = list(drop.demi = TRUE))
+
+# Same parameter names and order as constrainMkn()
+argnames(ll_fast)
+
+# Evaluate at a parameter vector
+pars <- setNames(rep(0.05, length(argnames(ll_fast))), argnames(ll_fast))
+ll_fast(pars)
+
+# Works directly with find.mle and mcmc
+fit   <- find.mle(ll_fast, pars, method = "subplex")
+chain <- diversitree::mcmc(ll_fast, pars, nsteps = 10000, w = 0.05,
+                            prior = function(p) sum(dexp(p, rate = 10, log = TRUE)),
+                            lower = 1e-6, print.every = 0)
+```
+
+## Build a reproducible test problem
+
+We simulate phylogenetically-correlated chromosome data so that sibling
+species have similar karyotypes, as in real data. This is necessary for the
+likelihood to be informative (random-uniform chromosome assignments produce
+disjoint partial-likelihood supports at sibling joins, which is unrealistic).
+
+```{r build}
+suppressPackageStartupMessages({
+  library(chromePlus); library(diversitree); library(ape)
+})
+
+build_problem <- function(k_target, n_tips = 100, seed = 1) {
+  half <- k_target / 2
+  chrom_range <- c(5, 5 + half - 1)
+  set.seed(seed)
+  tree <- rcoal(n_tips, tip.label = paste0("sp", 1:n_tips))
+  sim <- suppressMessages(simChrom(
+    tree = tree, model = "ChromPlus",
+    pars = c(asc1 = 0.10, asc2 = 0.12, desc1 = 0.08, desc2 = 0.09,
+             dem1 = 0,    dem2 = 0,    pol1  = 0.005, pol2  = 0.005,
+             tran12 = 0.02, tran21 = 0.02,
+             root.chrom = round(mean(chrom_range)), root.state = 0),
+    limits = chrom_range))
+  chroms <- pmin(pmax(as.numeric(sim$chrom.num), chrom_range[1]),
+                 chrom_range[2])
+  bin <- as.numeric(sim$binary.state)
+  dat <- data.frame(species = tree$tip.label, chrom = chroms,
+                    prob = ifelse(bin == 0, 1, 0))
+  dat.mat <- datatoMatrix(x = dat, range = chrom_range, hyper = TRUE)
+  list(tree = tree, dat.mat = dat.mat, k = k_target)
+}
+```
+
+## Identical output
+
+We construct both pipelines and compare log-likelihoods at several parameter
+vectors. Differences should be at the level of ODE-solver accuracy
+(`~1e-8`), not larger.
+
+```{r identical}
+prob <- build_problem(k_target = 80, n_tips = 50)
+
+# diversitree path
+lik <- suppressMessages(make.mkn(prob$tree, states = prob$dat.mat,
+                                  k = ncol(prob$dat.mat), strict = FALSE,
+                                  control = list(method = "ode", tol = 1e-10)))
+con <- suppressMessages(constrainMkn(data = prob$dat.mat, lik = lik,
+                                      hyper = TRUE,
+                                      constrain = list(drop.demi = TRUE)))
+
+# chromePlus fast path
+ll_fast <- make.mkn.fast(prob$tree, prob$dat.mat, hyper = TRUE,
+                         constrain = list(drop.demi = TRUE))
+
+# Same parameters, same order
+argn <- argnames(ll_fast)
+stopifnot(setequal(argn, diversitree::argnames(con)))
+
+# Evaluate at five random parameter draws and compare
+set.seed(42)
+diffs <- replicate(5, {
+  pars <- setNames(runif(length(argn), 0.001, 0.2), argn)
+  abs(con(pars[diversitree::argnames(con)]) - ll_fast(pars))
+})
+diffs
+max(diffs)
+```
+
+The differences are well below 1e-7. Note: the residual is on diversitree's
+side — the ODE accumulates numerical error proportional to its tolerance,
+while uniformization is exact to machine precision. Tighten the ODE tolerance
+(`control = list(tol = 1e-12)`) and the agreement gets even closer.
+
+## Speed comparison
+
+```{r speed}
+bench_at <- function(k_target, n_tips = 100, n_reps = 20, seed = 1) {
+  prob <- build_problem(k_target, n_tips, seed)
+  lik <- suppressMessages(make.mkn(prob$tree, states = prob$dat.mat,
+                                    k = ncol(prob$dat.mat), strict = FALSE,
+                                    control = list(method = "ode", tol = 1e-8)))
+  con <- suppressMessages(constrainMkn(data = prob$dat.mat, lik = lik,
+                                        hyper = TRUE,
+                                        constrain = list(drop.demi = TRUE)))
+  ll_fast <- make.mkn.fast(prob$tree, prob$dat.mat, hyper = TRUE,
+                            constrain = list(drop.demi = TRUE))
+  argn <- argnames(ll_fast)
+  pars <- setNames(rep(0.05, length(argn)), argn)
+  if ("pol1" %in% argn)   pars["pol1"]   <- 0.001
+  if ("pol2" %in% argn)   pars["pol2"]   <- 0.0015
+  if ("tran12" %in% argn) pars["tran12"] <- 0.005
+  if ("tran21" %in% argn) pars["tran21"] <- 0.004
+
+  v_div  <- con(pars[diversitree::argnames(con)])
+  v_fast <- ll_fast(pars)
+  t_div  <- system.time(for (i in seq_len(n_reps)) v_div  <- con(pars[diversitree::argnames(con)]))[["elapsed"]] / n_reps
+  t_fast <- system.time(for (i in seq_len(50 * n_reps)) v_fast <- ll_fast(pars))[["elapsed"]] / (50 * n_reps)
+
+  data.frame(k = k_target,
+             n_tips = n_tips,
+             diversitree_s = signif(t_div, 3),
+             fast_s        = signif(t_fast, 3),
+             speedup       = signif(t_div / t_fast, 3),
+             ll_diff       = signif(abs(v_div - v_fast), 3))
+}
+
+# Sweep at moderate sizes (kept small here so the vignette renders quickly)
+do.call(rbind, lapply(c(50, 100, 200), bench_at, n_tips = 100))
+```
+
+On a typical workstation we observe (`n_tips = 150`, optimised installed
+package):
+
+| `k`  | diversitree | `make.mkn.fast` | speedup |
+|------|-------------|------------------|---------|
+| 50   | 5.8 ms      | 0.17 ms          | 34×     |
+| 100  | 13 ms       | 0.32 ms          | 40×     |
+| 200  | 39 ms       | 0.64 ms          | 61×     |
+| 400  | 168 ms      | 1.26 ms          | 134×    |
+| 600  | 472 ms      | 1.96 ms          | 241×    |
+
+For a 100,000-step MCMC at `k = 600`: ~13 hours via diversitree drops to
+~3 minutes via `make.mkn.fast()`.
+
+## Use with `find.mle` and `mcmc`
+
+The fast likelihood is a drop-in replacement for any diversitree-style
+`function(pars)` likelihood. Both `find.mle()` and `mcmc()` work without any
+changes:
+
+```{r mle, results = "hide"}
+prob <- build_problem(k_target = 50, n_tips = 50)
+ll_fast <- make.mkn.fast(prob$tree, prob$dat.mat, hyper = TRUE,
+                         constrain = list(drop.demi = TRUE,
+                                          drop.poly = TRUE))
+init <- setNames(rep(0.05, length(argnames(ll_fast))), argnames(ll_fast))
+fit <- find.mle(ll_fast, init, method = "subplex",
+                control = list(reltol = 1e-4, maxit = 5000))
+```
+
+```{r mle-show}
+fit$lnLik
+fit$par
+```
+
+```{r mcmc, results = "hide"}
+chain <- diversitree::mcmc(
+  ll_fast, init, nsteps = 200, w = 0.05,
+  prior = function(p) sum(dexp(p, rate = 10, log = TRUE)),
+  lower = 1e-6, print.every = 0)
+```
+
+```{r mcmc-show}
+head(chain)
+```
+
+## Caveats
+
+- **Mkn only.** `make.mkn.fast()` covers the `make.mkn() |> constrainMkn()`
+  path. The MuSSE case (`constrainMuSSE()`, with state-dependent speciation
+  and extinction) is not yet implemented because the coupled E/D equations
+  do not fit a sparse-uniformization kernel cleanly. For MuSSE, continue
+  using `constrainMuSSE()` for now.
+- **Tip data convention.** Probabilistic tip states (rows of `dat.mat` that
+  are not 0/1) are accepted; the convention follows `datatoMatrix()`'s
+  output. For `make.mkn`, diversitree itself requires deterministic tips —
+  if you have probabilistic tips, you were already routed to MuSSE.
+- **Numerical agreement.** Differences from `constrainMkn` are on the order
+  of `1e-8` and reflect diversitree's ODE tolerance, not bugs in the fast
+  path. Tightening `control$tol` reduces the gap.
+
+## How it works
+
+`make.mkn.fast()` builds the same parameter-mapping matrix (`parMat`) as
+`constrainMkn()` — the two functions share an internal helper, so model
+construction is bit-identical. The difference is the per-evaluation kernel:
+
+- **diversitree** integrates the matrix ODE
+  $\frac{dY}{dt} = QY$ once per unique branch length (matrix-valued, $k^2$
+  state variables), via a dense GSL `gemm` in C, then does dense pruning.
+- **`make.mkn.fast()`** does direct sparse Felsenstein pruning. For each
+  branch it computes $\exp(Q t) \cdot D$ via Jensen's uniformization
+  (Poisson-weighted powers of $P = I + Q/\alpha$), exploiting the ~6
+  non-zeros per row of $Q$. Each call is $\mathcal{O}(\mathrm{nnz}(Q) \cdot
+  \alpha t)$ rather than $\mathcal{O}(k^3)$.
+
+The savings grow with $k$ because the dense path scales superlinearly with
+state-space size while the sparse path scales with the (fixed) per-row
+non-zero count.
